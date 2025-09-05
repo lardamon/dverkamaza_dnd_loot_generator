@@ -1,21 +1,19 @@
 // service-worker.js — PWA Loot Generator
-// ↑ Меняй номер версии при каждом деплое (достаточно +1)
-const VERSION = 'v2025-09-05-1';
-const CACHE_NAME = `lootgen-${VERSION}`;
+importScripts('version.js');
 
-// Если сайт из корня (https://username.github.io/REPO/), оставь как есть.
-// Если у тебя подкаталог, код сам поймёт базовый путь.
-const BASE = self.registration.scope.replace(self.origin, ''); // напр. '/' или '/REPO/'
+const CACHE_NAME = `lootgen-${APP_VERSION}`;
+
+const BASE = self.registration.scope.replace(self.origin, '');
 
 const STATIC_ASSETS = [
   `${BASE}`,
   `${BASE}index.html`,
-  `${BASE}styles.css?v=${VERSION}`,
-  `${BASE}app.js?v=${VERSION}`,
+  `${BASE}styles.css?v=${APP_VERSION}`,
+  `${BASE}app.js?v=${APP_VERSION}`,
   `${BASE}manifest.json`,
 ];
 
-// — Установка нового SW
+// install
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil((async () => {
@@ -24,7 +22,7 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-// — Активация: чистим старые кэши + захватываем клиентов
+// activate
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -36,12 +34,12 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-// — Возможность принудительно активировать новую версию из страницы
+// skipWaiting из страницы
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// — Стратегии кеширования
+// стратегии
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -49,13 +47,11 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = url.origin === self.origin;
   const acceptsHTML = req.headers.get('accept')?.includes('text/html');
 
-  // HTML / переходы — network-first
   if (req.mode === 'navigate' || (req.method === 'GET' && acceptsHTML)) {
     event.respondWith(handleHTMLRequest(event));
     return;
   }
 
-  // Наш статик и data/*.json — stale-while-revalidate
   if (isSameOrigin) {
     const pathname = url.pathname;
     const isStatic =
@@ -68,12 +64,10 @@ self.addEventListener('fetch', (event) => {
       return;
     }
   }
-  // Остальное — пропускаем
 });
 
 async function handleHTMLRequest(event) {
   const cache = await caches.open(CACHE_NAME);
-  const preloaded = await event.preloadResponse; // может дать свежую сеть
   try {
     const net = await fetch(event.request, { cache: 'no-store' });
     cache.put(event.request, net.clone());
