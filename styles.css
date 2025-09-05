@@ -8,14 +8,17 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --radius:14px;
 
-  /* === добавил переменные для «золотого стекла» === */
+  /* золото + стекло */
   --gold:#d4af37;
   --gold-200:#e6c75a;
   --gold-300:#f3dfa2;
-  --glass: rgba(16,12,0,0.55);       /* общий фон-стекло */
-  --glass-strong: rgba(16,12,0,0.72);/* для сайдбара */
-  --stroke: rgba(212,175,55,0.45);
-  --shadow: 0 6px 24px rgba(0,0,0,.35);
+
+  /* чем меньше альфа — тем ПРОЗРАЧНЕЕ */
+  --glass: rgba(16,12,0,0.40);        /* шапка/табы */
+  --glass-strong: rgba(16,12,0,0.58);  /* сайдбар */
+  --card-glass: rgba(15,23,42,0.42);   /* карточки/панели */
+  --stroke: rgba(212,175,55,0.38);
+  --shadow: 0 8px 28px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
@@ -33,14 +36,14 @@ body{
   overflow-x:hidden; /* фикс: убираем горизонтальный скролл */
 }
 
-/* === Шапка/футер: стекло + золотой штрих === */
+/* === Шапка/футер: стекло + золото === */
 .app-header, .app-footer{
   position:sticky;
   top:0;
   z-index:10;
   background:var(--glass);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom:1px solid var(--stroke);
   padding:10px 14px;
   display:flex;align-items:center;gap:12px;
@@ -57,16 +60,20 @@ body{
 .brand .logo{font-size:24px}
 .brand h1{font-size:18px;margin:0}
 
+/* контейнер и карточки */
 .container{max-width:980px;margin:20px auto 80px; padding:0 12px; display:grid; gap:16px}
 .card{
-  background:var(--card);
-  border:1px solid rgba(255,255,255,.08);
+  background:var(--card-glass);                 /* ПОЛУПРОЗРАЧНЫЕ панели */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border:1px solid var(--stroke);               /* золочёная рамка */
   border-radius:var(--radius);
   padding:14px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  box-shadow: 0 6px 24px rgba(0,0,0,.28);
 }
-.card.subtle{background:rgba(15,23,42,.7)}
+.card.subtle{background:rgba(15,23,42,0.30)}
 
+/* базовые утилиты */
 .row{display:flex; align-items:center}
 .wrap{flex-wrap:wrap}
 .gap{gap:8px}
@@ -78,8 +85,8 @@ body{
 .tabs{
   display:inline-flex;
   background:var(--glass);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border:1px solid var(--stroke);
   border-radius:999px;
   padding:4px;
@@ -91,11 +98,11 @@ body{
   transition:background .15s, color .15s, border-color .15s;
 }
 .tab:hover{
-  background: rgba(0,0,0,0.15);
+  background: rgba(0,0,0,0.18);
   color: var(--gold);
 }
 .tab.active{
-  background: rgba(212,175,55,0.12);
+  background: rgba(212,175,55,0.14);
   color:#fff;
   box-shadow: inset 0 0 0 1px var(--stroke);
 }
@@ -118,37 +125,33 @@ body{
 
 /* кнопки */
 .btn{
-  background:#19233b; color:var(--ink);
-  border:1px solid rgba(255,255,255,.12);
+  background: rgba(25,35,59,0.55);
+  color:var(--ink);
+  border:1px solid rgba(255,255,255,.14);
   padding:8px 12px; border-radius:10px; cursor:pointer;
-  transition:filter .15s, transform .02s;
+  transition:filter .15s, transform .02s, color .15s, border-color .15s;
 }
-.btn:hover{filter:brightness(1.08)}
+.btn:hover{filter:brightness(1.12); border-color:var(--stroke); color:var(--gold-200)}
 .btn:active{transform:translateY(1px)}
 
 /* primary — золотой акцент */
 .btn.primary{
-  background: linear-gradient(180deg, rgba(212,175,55,0.85), rgba(180,140,30,0.9));
+  background: linear-gradient(180deg, rgba(212,175,55,0.88), rgba(180,140,30,0.92));
   border:1px solid var(--gold);
   color:#1a1100;
   text-shadow: 0 1px 0 rgba(255,255,255,0.35);
 }
-.btn.primary:hover{
-  filter: brightness(1.05);
-}
-
-/* икон-кнопки в шапке — тоже слегка золотим */
+.btn.primary:hover{filter:brightness(1.06)}
 .btn.icon{
   font-size:18px; padding:6px 10px;
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.15);
+  background: rgba(0,0,0,0.18);
   color: var(--gold-300);
 }
 .btn.icon:hover{
-  background: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.26);
   color: var(--gold);
 }
-
 .btn.danger{background:#2a1518; border-color:#402325; color:#ffb5b5}
 .btn.file{position:relative; overflow:hidden}
 .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
@@ -160,46 +163,49 @@ body{
 
 .mono{font-family:var(--mono); font-size:13px}
 .editor{min-height:240px}
-.scroll{max-height:260px; overflow:auto; padding:10px; background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:8px}
+.scroll{max-height:260px; overflow:auto; padding:10px; background:rgba(11,18,32,0.55); border:1px solid rgba(255,255,255,.10); border-radius:8px}
 
+/* списки/заголовки/подсказки */
 ul{margin:6px 0 0 16px}
 h2,h3{margin:.2em 0 .4em}
-h3{font-size:16px; color:#cbd5e1}
-small,.hint{color:rgba(255, 240, 200, 0.8)} /* подсказки чуть «теплее» */
+h3{font-size:16px; color:var(--gold-200)}
+small,.hint{color:rgba(255, 240, 200, 0.82)}
 
 /* Треки */
 .tracks{list-style:none; margin:0; padding:0; max-height:260px}
 .tracks li{
   display:flex; align-items:center; justify-content:space-between;
-  gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.08);
-  background:#0b1220; border-radius:10px; margin-bottom:6px; cursor:pointer;
-  max-width:100%; /* не выходить за пределы экрана */
+  gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.10);
+  background:rgba(11,18,32,0.55); border-radius:10px; margin-bottom:6px; cursor:pointer;
+  max-width:100%;
 }
 .tracks li.active{outline:2px solid #22c55e}
 .tracks .title{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width:70%;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;
 }
 .tracks .len{color:var(--muted); font-variant-numeric: tabular-nums}
 
-/* === Сайдбар: стекло + золотые акценты === */
+/* === Сайдбар: стекло + золото === */
 .sidepanel{
   position:fixed;
   top:0; bottom:0; left:0; right:auto;
   width:min(420px,96%); max-width:420px;
   transform:translateX(-110%); transition:transform .2s ease;
   background:var(--glass-strong);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-right:1px solid var(--stroke);
   z-index:50; display:flex; flex-direction:column;
   box-shadow: var(--shadow);
 }
 .sidepanel.open{transform:none}
-.side-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--stroke)}
-.side-tabs{display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid var(--stroke)}
+.side-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--stroke)
+}
+.side-tabs{
+  display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid var(--stroke)
+}
 .stab{
   background:transparent;
   border:1px solid transparent;
@@ -208,12 +214,12 @@ small,.hint{color:rgba(255, 240, 200, 0.8)} /* подсказки чуть «т�
 }
 .stab:hover{
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.15);
+  background: rgba(0,0,0,0.16);
   color: var(--gold);
 }
 .stab.active{
   border-color: var(--gold);
-  background: rgba(212,175,55,0.12);
+  background: rgba(212,175,55,0.14);
   color:#fff;
 }
 .side-content{padding:12px; overflow:auto; height:100%}
@@ -221,7 +227,7 @@ small,.hint{color:rgba(255, 240, 200, 0.8)} /* подсказки чуть «т�
 .spanel.visible{display:block}
 
 .history{display:flex; flex-direction:column; gap:8px; padding-left:18px}
-.history li{background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px}
+.history li{background:rgba(11,18,32,0.55); border:1px solid rgba(255,255,255,.10); border-radius:10px; padding:8px}
 
 /* мобильные переключатели */
 .mobile-only{display:none}
@@ -235,21 +241,19 @@ body.mobile .desktop-only{display:none}
 /* === Музыка: фикс ширины и переносов === */
 #mode-music{
   max-width:100%;
-  overflow-x:hidden;   /* не прокручиваться по горизонтали */
+  overflow-x:hidden;
 }
-/* Включаем флекс-колонку ТОЛЬКО когда вкладка активна */
 #mode-music.mode.visible{
   display:flex;
   flex-direction:column;
   gap:12px;
 }
-#mode-music .row{ flex-wrap:wrap; } /* переносить селекты и кнопки на новую строку */
+#mode-music .row{ flex-wrap:wrap; }
 
 /* На мобилках чуть меньше размытия для производительности */
 @media (hover:none), (pointer:coarse){
   .app-header, .tabs, .sidepanel{
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 }
-/* bump */
