@@ -8,16 +8,17 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --radius:14px;
 
-  /* золото + стекло */
+  /* золото + стекло (ещё ПРОЗРАЧНЕЕ) */
   --gold:#d4af37;
   --gold-200:#e6c75a;
   --gold-300:#f3dfa2;
 
-  /* чем меньше альфа — тем ПРОЗРАЧНЕЕ */
-  --glass: rgba(16,12,0,0.40);        /* шапка/табы */
-  --glass-strong: rgba(16,12,0,0.58);  /* сайдбар */
-  --card-glass: rgba(15,23,42,0.42);   /* карточки/панели */
-  --stroke: rgba(212,175,55,0.38);
+  --glass:        rgba(16,12,0,0.32);  /* шапка/табы */
+  --glass-strong: rgba(16,12,0,0.46);  /* сайдбар */
+  --card-glass:   rgba(15,23,42,0.34); /* карточки */
+  --field-glass:  rgba(11,18,32,0.42); /* поля/списки */
+  --stroke:       rgba(212,175,55,0.34);
+  --stroke-strong:rgba(212,175,55,0.50);
   --shadow: 0 8px 28px rgba(0,0,0,.35);
 }
 
@@ -33,14 +34,12 @@ body{
   color:var(--ink);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
   line-height:1.4;
-  overflow-x:hidden; /* фикс: убираем горизонтальный скролл */
+  overflow-x:hidden;
 }
 
-/* === Шапка/футер: стекло + золото === */
-.app-header, .app-footer{
-  position:sticky;
-  top:0;
-  z-index:10;
+/* === Шапка (липкая) === */
+.app-header{
+  position:sticky; top:0; z-index:10;
   background:var(--glass);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -49,11 +48,14 @@ body{
   display:flex;align-items:center;gap:12px;
   box-shadow: var(--shadow);
 }
+
+/* === Футер (обычный, не прилипает) === */
 .app-footer{
-  top:auto; bottom:0;
+  position:static;
+  background:var(--glass);
   border-top:1px solid var(--stroke);
-  border-bottom:none;
-  justify-content:center;
+  padding:8px 12px;
+  text-align:center;
 }
 
 .brand{display:flex;align-items:center;gap:10px}
@@ -63,17 +65,17 @@ body{
 /* контейнер и карточки */
 .container{max-width:980px;margin:20px auto 80px; padding:0 12px; display:grid; gap:16px}
 .card{
-  background:var(--card-glass);                 /* ПОЛУПРОЗРАЧНЫЕ панели */
+  background:var(--card-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border:1px solid var(--stroke);               /* золочёная рамка */
+  border:1px solid var(--stroke);
   border-radius:var(--radius);
   padding:14px;
   box-shadow: 0 6px 24px rgba(0,0,0,.28);
 }
-.card.subtle{background:rgba(15,23,42,0.30)}
+.card.subtle{background:rgba(15,23,42,0.26)}
 
-/* базовые утилиты */
+/* утилиты */
 .row{display:flex; align-items:center}
 .wrap{flex-wrap:wrap}
 .gap{gap:8px}
@@ -81,7 +83,7 @@ body{
 .spacer{flex:1}
 .grow{flex:1}
 
-/* === Табы: стекло + золотые акценты === */
+/* === Табы === */
 .tabs{
   display:inline-flex;
   background:var(--glass);
@@ -98,11 +100,11 @@ body{
   transition:background .15s, color .15s, border-color .15s;
 }
 .tab:hover{
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.16);
   color: var(--gold);
 }
 .tab.active{
-  background: rgba(212,175,55,0.14);
+  background: rgba(212,175,55,0.12);
   color:#fff;
   box-shadow: inset 0 0 0 1px var(--stroke);
 }
@@ -111,47 +113,73 @@ body{
 .mode{display:none;margin-top:8px}
 .mode.visible{display:block}
 
-/* поля */
+/* === Поля/селекты — стекло, без синевы === */
 .field{display:flex;flex-direction:column;gap:6px; min-width:140px; flex:1}
-.field input, .field select, textarea{
+.field input,
+.field select,
+textarea{
   width:100%;
-  background:#0b1220; color:var(--ink);
+  background:var(--field-glass);
+  color:var(--ink);
   border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 12px;
   font-size:16px;
+  outline:none; box-shadow:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  -webkit-appearance:none; appearance:none;
 }
-.checkbox{display:flex;gap:8px;align-items:center; user-select:none}
-.checkbox.one-line span{white-space:nowrap}
+.field input::placeholder,
+textarea::placeholder{ color:rgba(255,240,200,.55); }
+
+.field input:focus,
+.field select:focus,
+textarea:focus{
+  border-color: var(--stroke-strong);
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.18);
+  background: rgba(11,18,32,0.48);
+}
+
+/* селект — выпадающий список */
+select option{
+  background:#0b1220;
+  color:var(--ink);
+}
+
+/* чекбокс — золотой */
+input[type="checkbox"]{ accent-color: var(--gold); }
 
 /* кнопки */
 .btn{
-  background: rgba(25,35,59,0.55);
+  background: rgba(25,35,59,0.48);
   color:var(--ink);
   border:1px solid rgba(255,255,255,.14);
   padding:8px 12px; border-radius:10px; cursor:pointer;
-  transition:filter .15s, transform .02s, color .15s, border-color .15s;
+  transition:filter .15s, transform .02s, color .15s, border-color .15s, background .15s;
 }
 .btn:hover{filter:brightness(1.12); border-color:var(--stroke); color:var(--gold-200)}
 .btn:active{transform:translateY(1px)}
 
 /* primary — золотой акцент */
 .btn.primary{
-  background: linear-gradient(180deg, rgba(212,175,55,0.88), rgba(180,140,30,0.92));
+  background: linear-gradient(180deg, rgba(212,175,55,0.82), rgba(180,140,30,0.88));
   border:1px solid var(--gold);
   color:#1a1100;
   text-shadow: 0 1px 0 rgba(255,255,255,0.35);
 }
 .btn.primary:hover{filter:brightness(1.06)}
+
+/* кнопка-иконка меню */
 .btn.icon{
   font-size:18px; padding:6px 10px;
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.16);
   color: var(--gold-300);
 }
 .btn.icon:hover{
-  background: rgba(0,0,0,0.26);
+  background: rgba(0,0,0,0.24);
   color: var(--gold);
 }
+
 .btn.danger{background:#2a1518; border-color:#402325; color:#ffb5b5}
 .btn.file{position:relative; overflow:hidden}
 .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
@@ -161,11 +189,16 @@ body{
 .cols-2{grid-template-columns: 1fr 1fr}
 @media (max-width:740px){ .cols-2{grid-template-columns: 1fr} }
 
+/* типографика/мелочи */
 .mono{font-family:var(--mono); font-size:13px}
 .editor{min-height:240px}
-.scroll{max-height:260px; overflow:auto; padding:10px; background:rgba(11,18,32,0.55); border:1px solid rgba(255,255,255,.10); border-radius:8px}
-
-/* списки/заголовки/подсказки */
+.scroll{
+  max-height:260px; overflow:auto;
+  padding:10px;
+  background:var(--field-glass);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:8px
+}
 ul{margin:6px 0 0 16px}
 h2,h3{margin:.2em 0 .4em}
 h3{font-size:16px; color:var(--gold-200)}
@@ -176,16 +209,14 @@ small,.hint{color:rgba(255, 240, 200, 0.82)}
 .tracks li{
   display:flex; align-items:center; justify-content:space-between;
   gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.10);
-  background:rgba(11,18,32,0.55); border-radius:10px; margin-bottom:6px; cursor:pointer;
+  background:var(--field-glass); border-radius:10px; margin-bottom:6px; cursor:pointer;
   max-width:100%;
 }
 .tracks li.active{outline:2px solid #22c55e}
-.tracks .title{
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;
-}
+.tracks .title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
 .tracks .len{color:var(--muted); font-variant-numeric: tabular-nums}
 
-/* === Сайдбар: стекло + золото === */
+/* === Сайдбар === */
 .sidepanel{
   position:fixed;
   top:0; bottom:0; left:0; right:auto;
@@ -214,12 +245,12 @@ small,.hint{color:rgba(255, 240, 200, 0.82)}
 }
 .stab:hover{
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.16);
+  background: rgba(0,0,0,0.14);
   color: var(--gold);
 }
 .stab.active{
   border-color: var(--gold);
-  background: rgba(212,175,55,0.14);
+  background: rgba(212,175,55,0.12);
   color:#fff;
 }
 .side-content{padding:12px; overflow:auto; height:100%}
@@ -227,7 +258,7 @@ small,.hint{color:rgba(255, 240, 200, 0.82)}
 .spanel.visible{display:block}
 
 .history{display:flex; flex-direction:column; gap:8px; padding-left:18px}
-.history li{background:rgba(11,18,32,0.55); border:1px solid rgba(255,255,255,.10); border-radius:10px; padding:8px}
+.history li{background:var(--field-glass); border:1px solid rgba(255,255,255,.10); border-radius:10px; padding:8px}
 
 /* мобильные переключатели */
 .mobile-only{display:none}
@@ -238,16 +269,9 @@ body.mobile .desktop-only{display:none}
 .music-controls .btn{min-width:40px}
 #nowPlaying{display:block}
 
-/* === Музыка: фикс ширины и переносов === */
-#mode-music{
-  max-width:100%;
-  overflow-x:hidden;
-}
-#mode-music.mode.visible{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
+/* === Музыка: переносы === */
+#mode-music{ max-width:100%; overflow-x:hidden; }
+#mode-music.mode.visible{ display:flex; flex-direction:column; gap:12px; }
 #mode-music .row{ flex-wrap:wrap; }
 
 /* На мобилках чуть меньше размытия для производительности */

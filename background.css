@@ -1,48 +1,48 @@
-/* === Background Styles for Loot Generator === */
+/* background.css — кросс-платформенный фон без багов mobile Safari/Chrome */
 
-html, body {
-  height: 100%;
+:root{
+  /* тёмный фильтр поверх фона, можно ослабить до 0.35 */
+  --bg-dim: rgba(10, 8, 0, 0.45);
 }
 
-body {
-  /* fallback цвет, пока фон не загрузился */
-  background-color: #0f0f0f;
-
-  /* фоновое изображение */
-  background-image: url("./assets/img/site_background.webp");
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-
-  /* эффект на десктопах */
-  background-attachment: fixed;
-
-  margin: 0;
-  min-height: 100dvh; /* для корректной высоты на мобилках */
+/* Базовый слой фона через псевдо-элемент — работает и на мобильных */
+html, body { height: 100%; }
+body{
+  /* запасной цвет, если картинка не загрузится */
+  background: #0b1220;
   position: relative;
 }
 
-/* затемняющий оверлей для контраста текста */
-body::before {
+/* Сам фон: фиксированный слой за всем контентом */
+body::before{
+  content: "";
+  position: fixed;          /* вместо background-attachment:fixed */
+  inset: 0;
+  z-index: -1;              /* позади всего */
+  background-image: url("./assets/img/site_background.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;   /* сводит к минимуму рывки на мобилках */
+  transform: translateZ(0);
+}
+
+/* Мягкое затемнение, чтобы интерфейс читался на светлых участках */
+body::after{
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25); /* меняй на 0.15–0.40 по вкусу */
-  pointer-events: none;
   z-index: -1;
+  background: var(--bg-dim);     /* регулировать интенсивность фона */
+  pointer-events: none;
 }
 
-/* фиксим баг с дерганием скролла на iOS/Android */
-@media (hover: none), (pointer: coarse), (max-width: 768px) {
-  body {
-    background-attachment: scroll;
-  }
+/* На старых мобилках дополнительно избегаем любых fixed-багов */
+@media (hover:none), (pointer:coarse){
+  /* Ничего не меняем: уже используем fixed-слой, который ок на мобилках */
 }
 
-/* если нужно отключить фон на конкретных страницах */
-body.no-bg {
-  background-image: none;
-}
-body.no-bg::before {
-  display: none;
-}
+/* Если у тебя где-то в других стилях было:
+   body { background-attachment: fixed; }
+   — оно больше не нужно и может ломать фон на мобиле.
+*/
