@@ -11,13 +11,17 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
-html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+html{
+  scroll-behavior:smooth;
+  -webkit-text-size-adjust:100%;
+}
 body{
   margin:0;
   background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0d1528);
   color:var(--ink);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
   line-height:1.4;
+  overflow-x:hidden; /* 🔧 фикс: убираем горизонтальный скролл на телефоне */
 }
 
 .app-header, .app-footer{
@@ -110,9 +114,15 @@ small,.hint{color:var(--muted)}
   display:flex; align-items:center; justify-content:space-between;
   gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.08);
   background:#0b1220; border-radius:10px; margin-bottom:6px; cursor:pointer;
+  max-width:100%; /* 🔧 фикс: не выходить за пределы экрана */
 }
 .tracks li.active{outline:2px solid #22c55e}
-.tracks .title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%}
+.tracks .title{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:70%;
+}
 .tracks .len{color:var(--muted); font-variant-numeric: tabular-nums}
 
 /* левое узкое меню */
@@ -147,3 +157,9 @@ body.mobile .desktop-only{display:none}
 
 .music-controls .btn{min-width:40px}
 #nowPlaying{display:block}
+
+/* 🔧 фикс: страница Музыки не шире экрана */
+#mode-music {
+  max-width:100%;
+  overflow-x:hidden;
+}
