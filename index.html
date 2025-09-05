@@ -7,7 +7,7 @@
   <title>Генератор Лута D&D 5e от ДверьКамаза</title>
 
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=<script>document.write(APP_VERSION)</script>" />
+  <link rel="stylesheet" href="styles.css?v=v2025-09-05-1" />
 
   <meta name="description" content="Офлайн PWA генератор лута D&D 5e на русском. Ванильный HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
@@ -21,9 +21,182 @@
   </header>
 
   <main class="container">
-    <!-- вкладки и содержимое (как было) -->
-    <!-- ... твой код без изменений ... -->
+    <!-- ПАНЕЛЬ ВВОДА -->
+    <section class="card">
+      <div class="row wrap gap">
+        <div class="tabs" role="tablist" aria-label="Режим">
+          <button class="tab active" role="tab" aria-selected="true" data-tab="mode-battle">Бой</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="mode-env">Окружение</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="mode-music">Музыка</button>
+        </div>
+      </div>
+
+      <!-- Режим: Бой -->
+      <div id="mode-battle" class="mode visible">
+        <div class="row wrap gap">
+          <div class="field">
+            <label for="crInput" class="desktop-only">CR монстра</label>
+            <input id="crInput" class="desktop-only" type="number" inputmode="numeric" min="0" max="30" value="1" />
+            <label for="crSelect" class="mobile-only">CR монстра</label>
+            <select id="crSelect" class="mobile-only"></select>
+          </div>
+
+          <div class="field">
+            <label for="d20Input" class="desktop-only">Результат d20</label>
+            <input id="d20Input" class="desktop-only" type="number" inputmode="numeric" min="1" max="20" placeholder="1–20" />
+            <label for="d20Select" class="mobile-only">Результат d20</label>
+            <select id="d20Select" class="mobile-only"></select>
+          </div>
+
+          <label class="checkbox one-line">
+            <input id="bossCheck" type="checkbox" />
+            <span>Босс (увеличить бюджет)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Режим: Окружение -->
+      <div id="mode-env" class="mode">
+        <div class="row wrap gap">
+          <div class="field">
+            <label for="containerSelect">Контейнер</label>
+            <select id="containerSelect">
+              <option value="small">Малый</option>
+              <option value="medium" selected>Средний</option>
+              <option value="large">Крупный</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tierSelect">Tier</label>
+            <select id="tierSelect"></select>
+          </div>
+
+          <div class="field">
+            <label for="d20InputEnv" class="desktop-only">Результат d20</label>
+            <input id="d20InputEnv" class="desktop-only" type="number" inputmode="numeric" min="1" max="20" placeholder="1–20" />
+            <label for="d20SelectEnv" class="mobile-only">Результат d20</label>
+            <select id="d20SelectEnv" class="mobile-only"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Режим: Музыка -->
+      <div id="mode-music" class="mode">
+        <div class="row wrap gap">
+          <div class="field">
+            <label for="musicCategory">Категория</label>
+            <select id="musicCategory"></select>
+          </div>
+          <div class="field grow">
+            <label>Плейлист</label>
+            <ul id="trackList" class="tracks scroll"></ul>
+          </div>
+        </div>
+
+        <div class="music-controls mt">
+          <div class="row gap">
+            <button id="prevBtn" class="btn icon" title="Предыдущий">⏮</button>
+            <button id="playBtn" class="btn icon" title="Пуск/Пауза">⏯</button>
+            <button id="nextBtn" class="btn icon" title="Следующий">⏭</button>
+            <button id="shuffleBtn" class="btn" title="Шаффл">🔀</button>
+            <button id="loopBtn" class="btn" title="Повтор">🔁</button>
+            <div class="row gap" style="align-items:center">
+              <span class="hint">Громкость</span>
+              <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="0.8" />
+            </div>
+          </div>
+          <div class="mt">
+            <strong id="nowPlaying">Ничего не играет</strong>
+          </div>
+        </div>
+
+        <audio id="audio" preload="none"></audio>
+      </div>
+
+      <div class="row wrap gap mt">
+        <button id="generateBtn" class="btn primary">Сгенерировать лут</button>
+        <button id="copyBtn" class="btn">Скопировать</button>
+        <button id="saveHistoryBtn" class="btn">Сохранить в историю</button>
+      </div>
+    </section>
+
+    <!-- РЕЗУЛЬТАТ -->
+    <section id="resultCard" class="card">
+      <h2>Результат</h2>
+      <div class="grid cols-2 mt">
+        <div>
+          <h3>Монеты</h3>
+          <ul id="coinsList"></ul>
+        </div>
+        <div>
+          <h3>Предметы</h3>
+          <ul id="itemsList"></ul>
+        </div>
+      </div>
+      <div class="grid cols-2 mt">
+        <div>
+          <h3>Мелкие драгоценности</h3>
+          <ul id="smallGemsList"></ul>
+        </div>
+        <div>
+          <h3>Редкие драгоценности</h3>
+          <ul id="rareGemsList"></ul>
+        </div>
+      </div>
+      <div class="mt">
+        <strong>Итоговая ценность (gp): </strong><span id="totalValue"></span>
+      </div>
+    </section>
+
+    <!-- Подсказка по установке PWA -->
+    <section id="installCard" class="card subtle" hidden>
+      <div class="row wrap gap">
+        <div><h2>Установить как приложение</h2></div>
+        <div class="spacer"></div>
+        <button id="installBtn" class="btn" hidden>Добавить на главный экран</button>
+      </div>
+      <p id="installHint" class="hint" hidden>
+        На iPhone: откройте меню «Поделиться» → «На экран “Домой”».
+      </p>
+    </section>
   </main>
+
+  <!-- Боковое меню -->
+  <aside id="sidePanel" class="sidepanel left">
+    <div class="side-header">
+      <h2>Меню</h2>
+      <button id="closeMenuBtn" class="btn icon" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="side-tabs">
+      <button class="stab active" data-panel="historyPanel">История</button>
+      <button class="stab" data-panel="settingsPanel">Настройки</button>
+    </div>
+
+    <div class="side-content">
+      <section id="historyPanel" class="spanel visible">
+        <div class="row wrap gap">
+          <button id="exportHistoryBtn" class="btn">Экспорт истории</button>
+          <button id="clearHistoryBtn" class="btn danger">Очистить историю</button>
+        </div>
+        <ol id="historyList" class="history"></ol>
+      </section>
+      <section id="settingsPanel" class="spanel">
+        <div class="field">
+          <label for="hardnessRange">Уровень «жесткости» (монеты): <span id="hardnessLabel">1.0×</span></label>
+          <input id="hardnessRange" type="range" min="0.5" max="3.0" step="0.1" value="1.0" />
+          <p class="hint">Множитель к бюджету и монетам (0.5×…3.0×). 1.0 — по умолчанию.</p>
+        </div>
+        <div class="field">
+          <label for="maxItemsInput">Максимум предметов</label>
+          <input id="maxItemsInput" type="number" min="1" max="3" value="1" />
+        </div>
+        <div class="row wrap gap">
+          <button id="saveSettingsBtn" class="btn primary">Сохранить</button>
+          <button id="resetSettingsBtn" class="btn">Сбросить</button>
+        </div>
+      </section>
+    </div>
+  </aside>
 
   <footer class="app-footer">
     <small>© ДверьКамаза 2025 Локальный офлайн-генератор. Версия <span id="appVersion"></span></small>
@@ -31,14 +204,9 @@
 
   <script src="version.js"></script>
   <script>
-    // подставляем версию в футер и ресурсы
     document.getElementById('appVersion').textContent = APP_VERSION;
-
-    const cssLink = document.querySelector('link[href^="styles.css"]');
-    if (cssLink) cssLink.href = `styles.css?v=${APP_VERSION}`;
   </script>
-
-  <script src="app.js" defer></script>
+  <script src="app.js?v=v2025-09-05-1" defer></script>
 
   <script>
     if ('serviceWorker' in navigator) {
