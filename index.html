@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>Генератор Лута D&D 5e от ДверьКамаза</title>
+
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+  <!-- ВАЖНО: версия совпадает с VERSION в service-worker.js -->
+  <link rel="stylesheet" href="styles.css?v=v2025-09-05-1" />
+
   <meta name="description" content="Офлайн PWA генератор лута D&D 5e на русском. Ванильный HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
 <body>
@@ -207,11 +210,29 @@
     <small>© 2025 Локальный офлайн-генератор. Ванильный JS.</small>
   </footer>
 
-  <script src="app.js" defer></script>
+  <!-- ВАЖНО: версия совпадает с VERSION в service-worker.js -->
+  <script src="app.js?v=v2025-09-05-1" defer></script>
+
+  <!-- Улучшенная регистрация SW, чтобы обновления подтягивались сразу -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
+        navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+          .then(reg => {
+            // если новая версия уже скачана и ждёт — активируем сразу
+            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+            // когда появляется новая версия — не ждём перезапуска
+            reg.addEventListener('updatefound', () => {
+              const nw = reg.installing;
+              nw?.addEventListener('statechange', () => {
+                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                  nw.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          })
+          .catch(console.error);
       });
     }
   </script>
