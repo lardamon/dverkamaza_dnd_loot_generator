@@ -1,0 +1,48 @@
+/* === Background Styles for Loot Generator === */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  /* fallback цвет, пока фон не загрузился */
+  background-color: #0f0f0f;
+
+  /* фоновое изображение */
+  background-image: url("./assets/img/site_background.webp");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  /* эффект на десктопах */
+  background-attachment: fixed;
+
+  margin: 0;
+  min-height: 100dvh; /* для корректной высоты на мобилках */
+  position: relative;
+}
+
+/* затемняющий оверлей для контраста текста */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25); /* меняй на 0.15–0.40 по вкусу */
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* фиксим баг с дерганием скролла на iOS/Android */
+@media (hover: none), (pointer: coarse), (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+/* если нужно отключить фон на конкретных страницах */
+body.no-bg {
+  background-image: none;
+}
+body.no-bg::before {
+  display: none;
+}

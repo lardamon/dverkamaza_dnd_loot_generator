@@ -9,6 +9,12 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css?v=v2025-09-05-1" />
 
+  <!-- Прелоад фоновой картинки для быстрой первой отрисовки -->
+  <link rel="preload" as="image" href="./assets/img/site_background.webp" />
+
+  <!-- Отдельные стили фона (чтобы не трогать основной styles.css) -->
+  <link rel="stylesheet" href="background.css?v=v2025-09-05-1" />
+
   <meta name="description" content="Офлайн PWA генератор лута D&D 5e на русском. Ванильный HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
 <body>
