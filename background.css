@@ -1,48 +1,40 @@
 /* background.css — кросс-платформенный фон без багов mobile Safari/Chrome */
 
 :root{
-  /* тёмный фильтр поверх фона, можно ослабить до 0.35 */
-  --bg-dim: rgba(10, 8, 0, 0.45);
+  /* Сделал вуаль заметно светлее (было 0.45) */
+  --bg-dim: rgba(10, 8, 0, 0.20);
 }
 
-/* Базовый слой фона через псевдо-элемент — работает и на мобильных */
 html, body { height: 100%; }
+
 body{
   /* запасной цвет, если картинка не загрузится */
   background: #0b1220;
   position: relative;
 }
 
-/* Сам фон: фиксированный слой за всем контентом */
+/* Сам фон фиксированным слоем — работает и на мобильных */
 body::before{
   content: "";
-  position: fixed;          /* вместо background-attachment:fixed */
+  position: fixed;
   inset: 0;
-  z-index: -1;              /* позади всего */
+  z-index: -1;
   background-image: url("./assets/img/site_background.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  will-change: transform;   /* сводит к минимуму рывки на мобилках */
+  will-change: transform;
   transform: translateZ(0);
 }
 
-/* Мягкое затемнение, чтобы интерфейс читался на светлых участках */
+/* Лёгкое затемнение для читаемости интерфейса */
 body::after{
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--bg-dim);     /* регулировать интенсивность фона */
+  background: var(--bg-dim);
   pointer-events: none;
 }
 
-/* На старых мобилках дополнительно избегаем любых fixed-багов */
-@media (hover:none), (pointer:coarse){
-  /* Ничего не меняем: уже используем fixed-слой, который ок на мобилках */
-}
-
-/* Если у тебя где-то в других стилях было:
-   body { background-attachment: fixed; }
-   — оно больше не нужно и может ломать фон на мобиле.
-*/
+/* Ничего больше не нужно — fixed-слой уже кросс-платформенный */
