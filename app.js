@@ -334,7 +334,7 @@ function saveSettings(){
 }
 function resetSettings(){ STATE.settings={...DEFAULT_SETTINGS}; saveToLS(LS_KEYS.SETTINGS, STATE.settings); loadSettings(); }
 
-/* ---------- Музыка (как было) ---------- */
+/* ---------- Музыка ---------- */
 function secondsToMMSS(sec){ sec=Math.max(0,Math.round(sec)); const m=Math.floor(sec/60), s=sec%60; return `${m}:${s.toString().padStart(2,'0')}`; }
 function setBtnActive(sel,active){ const b=$(sel); if(b) b.classList.toggle('primary', !!active); }
 function initMusic(){
@@ -395,7 +395,7 @@ function afterGenerateFocusFix(){
   const card = $('#resultCard'); if (card) setTimeout(()=> card.scrollIntoView({behavior:'smooth', block:'start'}), 60);
 }
 
-/* PWA install: показываем только там, где событие реально существует */
+/* PWA install */
 window.addEventListener('beforeinstallprompt', (e)=>{
   e.preventDefault();
   STATE.deferredPrompt = e;
@@ -411,13 +411,10 @@ function setupInstallHint(){
   const card = $('#installCard'); const hint = $('#installHint'); const btn = $('#installBtn');
 
   if (isStandalone){ if(card) card.hidden = true; return; }
-
-  if (STATE.deferredPrompt){ /* уже обработано в событии */ return; }
-
+  if (STATE.deferredPrompt){ return; }
   if (isiOS){
     if (card && hint){ card.hidden = false; hint.hidden = false; if (btn) btn.hidden = true; }
   } else {
-    // ни события, ни iOS — скрываем секцию
     if (card) card.hidden = true;
   }
 }
@@ -431,8 +428,16 @@ function triggerInstall(){
 function bindEvents(){
   // табы
   $$('.tab').forEach(btn=> btn.addEventListener('click', ()=>{
+    // переключение вкладок
     $$('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    $$('.mode').forEach(m=>m.classList.remove('visible')); document.getElementById(btn.dataset.tab).classList.add('visible');
+    $$('.mode').forEach(m=>m.classList.remove('visible'));
+    const targetId = btn.dataset.tab;
+    document.getElementById(targetId).classList.add('visible');
+
+    // показывать/скрывать карточку "Результат": прячем на вкладке Музыка
+    const isMusic = targetId === 'mode-music';
+    const resultCard = $('#resultCard');
+    if (resultCard) resultCard.hidden = isMusic;
   }));
 
   // генерация лута
@@ -510,6 +515,10 @@ async function init(){
   bindEvents();
   initMusic();
   setupInstallHint();
+
+  // при старте на бою/окружении "Результат" виден
+  const resultCard = $('#resultCard');
+  if (resultCard) resultCard.hidden = false;
 }
 init().catch(err=>{
   console.error('Init error', err);
