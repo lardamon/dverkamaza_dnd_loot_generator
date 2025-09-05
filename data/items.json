@@ -1,0 +1,32 @@
+[
+  {
+    "id": "item_001",
+    "name": "Нож карманный",
+    "type": "снаряжение",
+    "rarity": "обычный",
+    "value_gp": 1,
+    "tier": 1,
+    "loot_source": ["mob","chest","environment"],
+    "description": "Простой складной нож."
+  },
+  {
+    "id": "item_002",
+    "name": "Potion of Healing (Зелье лечения)",
+    "type": "расходник",
+    "rarity": "обычный",
+    "value_gp": 50,
+    "tier": 3,
+    "loot_source": ["mob","chest"],
+    "description": "Восстанавливает 2d4+2 HP."
+  },
+  {
+    "id": "item_010",
+    "name": "Универсальный растворитель",
+    "type": "чудесный предмет",
+    "rarity": "легендарный",
+    "value_gp": 10000,
+    "tier": 17,
+    "loot_source": ["chest"],
+    "description": "Растворяет клей/смолу/липкие субстанции."
+  }
+]

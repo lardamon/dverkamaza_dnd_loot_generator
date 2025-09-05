@@ -1,0 +1,149 @@
+:root{
+  --bg:#0b1220;
+  --card:#0f172a;
+  --ink:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#22c55e;
+  --danger:#ef4444;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --radius:14px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0d1528);
+  color:var(--ink);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
+  line-height:1.4;
+}
+
+.app-header, .app-footer{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:rgba(15,23,42,.9);
+  backdrop-filter: blur(6px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.app-footer{
+  top:auto; bottom:0;
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:none;
+  justify-content:center;
+}
+
+.brand{display:flex;align-items:center;gap:10px}
+.brand .logo{font-size:24px}
+.brand h1{font-size:18px;margin:0}
+
+.container{max-width:980px;margin:20px auto 80px; padding:0 12px; display:grid; gap:16px}
+.card{
+  background:var(--card);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--radius);
+  padding:14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+}
+.card.subtle{background:rgba(15,23,42,.7)}
+
+.row{display:flex; align-items:center}
+.wrap{flex-wrap:wrap}
+.gap{gap:8px}
+.mt{margin-top:12px}
+.spacer{flex:1}
+.grow{flex:1}
+
+.tabs{display:inline-flex; background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:4px}
+.tab{
+  border:none; background:transparent; color:var(--ink);
+  padding:8px 12px; border-radius:999px; cursor:pointer;
+}
+.tab.active{background:#182238}
+
+.mode{display:none;margin-top:8px}
+.mode.visible{display:block}
+
+.field{display:flex;flex-direction:column;gap:6px; min-width:160px}
+.field input, .field select, textarea{
+  width:100%;
+  background:#0b1220; color:var(--ink);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; padding:10px 12px;
+  font-size:16px; /* важный фикс против авто-зумма на iOS */
+}
+.checkbox{display:flex;gap:8px;align-items:center; user-select:none}
+.checkbox.one-line span{white-space:nowrap}
+
+.btn{
+  background:#19233b; color:var(--ink);
+  border:1px solid rgba(255,255,255,.12);
+  padding:8px 12px; border-radius:10px; cursor:pointer;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.primary{background:#1c2e24; border-color:#244b30; color:#b5ffd2}
+.btn.icon{font-size:18px; padding:6px 10px}
+.btn.danger{background:#2a1518; border-color:#402325; color:#ffb5b5}
+.btn.file{position:relative; overflow:hidden}
+.btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
+
+.grid{display:grid; gap:8px}
+.cols-2{grid-template-columns: 1fr 1fr}
+@media (max-width:740px){ .cols-2{grid-template-columns: 1fr} }
+
+.mono{font-family:var(--mono); font-size:13px}
+.editor{min-height:240px}
+.scroll{max-height:260px; overflow:auto; padding:10px; background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:8px}
+
+ul{margin:6px 0 0 16px}
+h2,h3{margin:.2em 0 .4em}
+h3{font-size:16px; color:#cbd5e1}
+small,.hint{color:var(--muted)}
+
+/* Треки */
+.tracks{list-style:none; margin:0; padding:0; max-height:260px}
+.tracks li{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.08);
+  background:#0b1220; border-radius:10px; margin-bottom:6px; cursor:pointer;
+}
+.tracks li.active{outline:2px solid #22c55e}
+.tracks .title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%}
+.tracks .len{color:var(--muted); font-variant-numeric: tabular-nums}
+
+/* левое узкое меню */
+.sidepanel{
+  position:fixed;
+  top:0; bottom:0; left:0; right:auto;
+  width:min(420px,96%); max-width:420px;
+  transform:translateX(-110%); transition:transform .2s ease;
+  background:var(--card);
+  border-right:1px solid rgba(255,255,255,.06);
+  z-index:50; display:flex; flex-direction:column;
+}
+.sidepanel.open{transform:none}
+.side-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06)}
+.side-tabs{display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06)}
+.stab{background:#0b1220; border:1px solid rgba(255,255,255,.08); color:var(--ink); padding:8px 10px; border-radius:999px; cursor:pointer}
+.stab.active{background:#182238}
+.side-content{padding:12px; overflow:auto; height:100%}
+.spanel{display:none}
+.spanel.visible{display:block}
+
+.history{display:flex; flex-direction:column; gap:8px; padding-left:18px}
+.history li{background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px}
+
+.app-footer{padding:8px 12px; background:rgba(15,23,42,.9)}
+
+/* мобильные переключатели */
+.mobile-only{display:none}
+.desktop-only{display:block}
+body.mobile .mobile-only{display:block}
+body.mobile .desktop-only{display:none}
+
+.music-controls .btn{min-width:40px}
+#nowPlaying{display:block}
