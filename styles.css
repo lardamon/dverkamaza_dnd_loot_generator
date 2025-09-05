@@ -21,7 +21,7 @@ body{
   color:var(--ink);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
   line-height:1.4;
-  overflow-x:hidden; /* 🔧 фикс: убираем горизонтальный скролл */
+  overflow-x:hidden; /* фикс: убираем горизонтальный скролл */
 }
 
 .app-header, .app-footer{
@@ -69,9 +69,11 @@ body{
 }
 .tab.active{background:#182238}
 
+/* режимы вкладок */
 .mode{display:none;margin-top:8px}
 .mode.visible{display:block}
 
+/* поля */
 .field{display:flex;flex-direction:column;gap:6px; min-width:140px; flex:1}
 .field input, .field select, textarea{
   width:100%;
@@ -83,6 +85,7 @@ body{
 .checkbox{display:flex;gap:8px;align-items:center; user-select:none}
 .checkbox.one-line span{white-space:nowrap}
 
+/* кнопки */
 .btn{
   background:#19233b; color:var(--ink);
   border:1px solid rgba(255,255,255,.12);
@@ -95,6 +98,7 @@ body{
 .btn.file{position:relative; overflow:hidden}
 .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
 
+/* сетка */
 .grid{display:grid; gap:8px}
 .cols-2{grid-template-columns: 1fr 1fr}
 @media (max-width:740px){ .cols-2{grid-template-columns: 1fr} }
@@ -114,7 +118,7 @@ small,.hint{color:var(--muted)}
   display:flex; align-items:center; justify-content:space-between;
   gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.08);
   background:#0b1220; border-radius:10px; margin-bottom:6px; cursor:pointer;
-  max-width:100%;
+  max-width:100%; /* не выходить за пределы экрана */
 }
 .tracks li.active{outline:2px solid #22c55e}
 .tracks .title{
@@ -158,14 +162,15 @@ body.mobile .desktop-only{display:none}
 .music-controls .btn{min-width:40px}
 #nowPlaying{display:block}
 
-/* 🔧 фикс: страница Музыки не шире экрана */
-#mode-music {
+/* === Музыка: фикс ширины и переносов === */
+#mode-music{
   max-width:100%;
-  overflow-x:hidden;
+  overflow-x:hidden;   /* не прокручиваться по горизонтали */
+}
+/* Включаем флекс-колонку ТОЛЬКО когда вкладка активна */
+#mode-music.mode.visible{
   display:flex;
   flex-direction:column;
   gap:12px;
 }
-#mode-music .row {
-  flex-wrap:wrap; /* поля и селекты теперь переносятся */
-}
+#mode-music .row{ flex-wrap:wrap; } /* переносить селекты и кнопки на новую строку */
