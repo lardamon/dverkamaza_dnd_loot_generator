@@ -21,7 +21,7 @@ body{
   color:var(--ink);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
   line-height:1.4;
-  overflow-x:hidden; /* 🔧 фикс: убираем горизонтальный скролл на телефоне */
+  overflow-x:hidden; /* 🔧 фикс: убираем горизонтальный скролл */
 }
 
 .app-header, .app-footer{
@@ -72,13 +72,13 @@ body{
 .mode{display:none;margin-top:8px}
 .mode.visible{display:block}
 
-.field{display:flex;flex-direction:column;gap:6px; min-width:160px}
+.field{display:flex;flex-direction:column;gap:6px; min-width:140px; flex:1}
 .field input, .field select, textarea{
   width:100%;
   background:#0b1220; color:var(--ink);
   border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 12px;
-  font-size:16px; /* важный фикс против авто-зумма на iOS */
+  font-size:16px;
 }
 .checkbox{display:flex;gap:8px;align-items:center; user-select:none}
 .checkbox.one-line span{white-space:nowrap}
@@ -114,7 +114,7 @@ small,.hint{color:var(--muted)}
   display:flex; align-items:center; justify-content:space-between;
   gap:8px; padding:8px 10px; border:1px solid rgba(255,255,255,.08);
   background:#0b1220; border-radius:10px; margin-bottom:6px; cursor:pointer;
-  max-width:100%; /* 🔧 фикс: не выходить за пределы экрана */
+  max-width:100%;
 }
 .tracks li.active{outline:2px solid #22c55e}
 .tracks .title{
@@ -162,4 +162,10 @@ body.mobile .desktop-only{display:none}
 #mode-music {
   max-width:100%;
   overflow-x:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+#mode-music .row {
+  flex-wrap:wrap; /* поля и селекты теперь переносятся */
 }
