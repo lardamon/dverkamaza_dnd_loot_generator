@@ -13,10 +13,10 @@
   --gold-200:#e6c75a;
   --gold-300:#f3dfa2;
 
-  --glass:        rgba(16,12,0,0.32);  /* шапка/табы */
-  --glass-strong: rgba(16,12,0,0.46);  /* сайдбар */
-  --card-glass:   rgba(15,23,42,0.34); /* карточки */
-  --field-glass:  rgba(11,18,32,0.42); /* поля/списки */
+  --glass:        rgba(16,12,0,0.25);  /* шапка/табы */
+  --glass-strong: rgba(16,12,0,0.32);  /* сайдбар */
+  --card-glass:   rgba(15,23,42,0.26); /* карточки */
+  --field-glass:  rgba(11,18,32,0.28); /* поля/списки */
   --stroke:       rgba(212,175,55,0.34);
   --stroke-strong:rgba(212,175,55,0.50);
   --shadow: 0 8px 28px rgba(0,0,0,.35);
@@ -30,6 +30,9 @@ html{
 }
 body{
   margin:0;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh; /* чтобы футер был внизу */
   background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0d1528);
   color:var(--ink);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
@@ -49,9 +52,9 @@ body{
   box-shadow: var(--shadow);
 }
 
-/* === Футер (обычный, не прилипает) === */
+/* === Футер (внизу страницы, не по центру) === */
 .app-footer{
-  position:static;
+  margin-top:auto;
   background:var(--glass);
   border-top:1px solid var(--stroke);
   padding:8px 12px;
@@ -63,7 +66,7 @@ body{
 .brand h1{font-size:18px;margin:0}
 
 /* контейнер и карточки */
-.container{max-width:980px;margin:20px auto 80px; padding:0 12px; display:grid; gap:16px}
+.container{max-width:980px;margin:20px auto 40px; padding:0 12px; display:grid; gap:16px}
 .card{
   background:var(--card-glass);
   backdrop-filter: blur(10px);
@@ -73,7 +76,7 @@ body{
   padding:14px;
   box-shadow: 0 6px 24px rgba(0,0,0,.28);
 }
-.card.subtle{background:rgba(15,23,42,0.26)}
+.card.subtle{background:rgba(15,23,42,0.20)}
 
 /* утилиты */
 .row{display:flex; align-items:center}
@@ -100,11 +103,11 @@ body{
   transition:background .15s, color .15s, border-color .15s;
 }
 .tab:hover{
-  background: rgba(0,0,0,0.16);
+  background: rgba(0,0,0,0.14);
   color: var(--gold);
 }
 .tab.active{
-  background: rgba(212,175,55,0.12);
+  background: rgba(212,175,55,0.10);
   color:#fff;
   box-shadow: inset 0 0 0 1px var(--stroke);
 }
@@ -113,7 +116,7 @@ body{
 .mode{display:none;margin-top:8px}
 .mode.visible{display:block}
 
-/* === Поля/селекты — стекло, без синевы === */
+/* === Поля/селекты === */
 .field{display:flex;flex-direction:column;gap:6px; min-width:140px; flex:1}
 .field input,
 .field select,
@@ -130,27 +133,19 @@ textarea{
 }
 .field input::placeholder,
 textarea::placeholder{ color:rgba(255,240,200,.55); }
-
 .field input:focus,
 .field select:focus,
 textarea:focus{
   border-color: var(--stroke-strong);
   box-shadow: 0 0 0 2px rgba(212,175,55,0.18);
-  background: rgba(11,18,32,0.48);
+  background: rgba(11,18,32,0.38);
 }
-
-/* селект — выпадающий список */
-select option{
-  background:#0b1220;
-  color:var(--ink);
-}
-
-/* чекбокс — золотой */
+select option{ background:#0b1220; color:var(--ink); }
 input[type="checkbox"]{ accent-color: var(--gold); }
 
 /* кнопки */
 .btn{
-  background: rgba(25,35,59,0.48);
+  background: rgba(25,35,59,0.42);
   color:var(--ink);
   border:1px solid rgba(255,255,255,.14);
   padding:8px 12px; border-radius:10px; cursor:pointer;
@@ -158,28 +153,20 @@ input[type="checkbox"]{ accent-color: var(--gold); }
 }
 .btn:hover{filter:brightness(1.12); border-color:var(--stroke); color:var(--gold-200)}
 .btn:active{transform:translateY(1px)}
-
-/* primary — золотой акцент */
 .btn.primary{
-  background: linear-gradient(180deg, rgba(212,175,55,0.82), rgba(180,140,30,0.88));
+  background: linear-gradient(180deg, rgba(212,175,55,0.78), rgba(180,140,30,0.82));
   border:1px solid var(--gold);
   color:#1a1100;
   text-shadow: 0 1px 0 rgba(255,255,255,0.35);
 }
 .btn.primary:hover{filter:brightness(1.06)}
-
-/* кнопка-иконка меню */
 .btn.icon{
   font-size:18px; padding:6px 10px;
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.16);
+  background: rgba(0,0,0,0.14);
   color: var(--gold-300);
 }
-.btn.icon:hover{
-  background: rgba(0,0,0,0.24);
-  color: var(--gold);
-}
-
+.btn.icon:hover{ background: rgba(0,0,0,0.22); color: var(--gold); }
 .btn.danger{background:#2a1518; border-color:#402325; color:#ffb5b5}
 .btn.file{position:relative; overflow:hidden}
 .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
@@ -189,7 +176,7 @@ input[type="checkbox"]{ accent-color: var(--gold); }
 .cols-2{grid-template-columns: 1fr 1fr}
 @media (max-width:740px){ .cols-2{grid-template-columns: 1fr} }
 
-/* типографика/мелочи */
+/* мелочи */
 .mono{font-family:var(--mono); font-size:13px}
 .editor{min-height:240px}
 .scroll{
@@ -218,8 +205,7 @@ small,.hint{color:rgba(255, 240, 200, 0.82)}
 
 /* === Сайдбар === */
 .sidepanel{
-  position:fixed;
-  top:0; bottom:0; left:0; right:auto;
+  position:fixed; top:0; bottom:0; left:0; right:auto;
   width:min(420px,96%); max-width:420px;
   transform:translateX(-110%); transition:transform .2s ease;
   background:var(--glass-strong);
@@ -245,12 +231,12 @@ small,.hint{color:rgba(255, 240, 200, 0.82)}
 }
 .stab:hover{
   border-color: var(--stroke);
-  background: rgba(0,0,0,0.14);
+  background: rgba(0,0,0,0.12);
   color: var(--gold);
 }
 .stab.active{
   border-color: var(--gold);
-  background: rgba(212,175,55,0.12);
+  background: rgba(212,175,55,0.10);
   color:#fff;
 }
 .side-content{padding:12px; overflow:auto; height:100%}
@@ -274,7 +260,7 @@ body.mobile .desktop-only{display:none}
 #mode-music.mode.visible{ display:flex; flex-direction:column; gap:12px; }
 #mode-music .row{ flex-wrap:wrap; }
 
-/* На мобилках чуть меньше размытия для производительности */
+/* На мобилках меньше blur для скорости */
 @media (hover:none), (pointer:coarse){
   .app-header, .tabs, .sidepanel{
     backdrop-filter: blur(6px);
