@@ -7,6 +7,15 @@
   --danger:#ef4444;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --radius:14px;
+
+  /* === добавил переменные для «золотого стекла» === */
+  --gold:#d4af37;
+  --gold-200:#e6c75a;
+  --gold-300:#f3dfa2;
+  --glass: rgba(16,12,0,0.55);       /* общий фон-стекло */
+  --glass-strong: rgba(16,12,0,0.72);/* для сайдбара */
+  --stroke: rgba(212,175,55,0.45);
+  --shadow: 0 6px 24px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
@@ -24,19 +33,22 @@ body{
   overflow-x:hidden; /* фикс: убираем горизонтальный скролл */
 }
 
+/* === Шапка/футер: стекло + золотой штрих === */
 .app-header, .app-footer{
   position:sticky;
   top:0;
   z-index:10;
-  background:rgba(15,23,42,.9);
+  background:var(--glass);
   backdrop-filter: blur(6px);
-  border-bottom:1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom:1px solid var(--stroke);
   padding:10px 14px;
   display:flex;align-items:center;gap:12px;
+  box-shadow: var(--shadow);
 }
 .app-footer{
   top:auto; bottom:0;
-  border-top:1px solid rgba(255,255,255,.06);
+  border-top:1px solid var(--stroke);
   border-bottom:none;
   justify-content:center;
 }
@@ -62,12 +74,31 @@ body{
 .spacer{flex:1}
 .grow{flex:1}
 
-.tabs{display:inline-flex; background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:4px}
-.tab{
-  border:none; background:transparent; color:var(--ink);
-  padding:8px 12px; border-radius:999px; cursor:pointer;
+/* === Табы: стекло + золотые акценты === */
+.tabs{
+  display:inline-flex;
+  background:var(--glass);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border:1px solid var(--stroke);
+  border-radius:999px;
+  padding:4px;
+  box-shadow: var(--shadow);
 }
-.tab.active{background:#182238}
+.tab{
+  border:none; background:transparent; color:var(--gold-300);
+  padding:8px 12px; border-radius:999px; cursor:pointer;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.tab:hover{
+  background: rgba(0,0,0,0.15);
+  color: var(--gold);
+}
+.tab.active{
+  background: rgba(212,175,55,0.12);
+  color:#fff;
+  box-shadow: inset 0 0 0 1px var(--stroke);
+}
 
 /* режимы вкладок */
 .mode{display:none;margin-top:8px}
@@ -90,10 +121,34 @@ body{
   background:#19233b; color:var(--ink);
   border:1px solid rgba(255,255,255,.12);
   padding:8px 12px; border-radius:10px; cursor:pointer;
+  transition:filter .15s, transform .02s;
 }
 .btn:hover{filter:brightness(1.08)}
-.btn.primary{background:#1c2e24; border-color:#244b30; color:#b5ffd2}
-.btn.icon{font-size:18px; padding:6px 10px}
+.btn:active{transform:translateY(1px)}
+
+/* primary — золотой акцент */
+.btn.primary{
+  background: linear-gradient(180deg, rgba(212,175,55,0.85), rgba(180,140,30,0.9));
+  border:1px solid var(--gold);
+  color:#1a1100;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+}
+.btn.primary:hover{
+  filter: brightness(1.05);
+}
+
+/* икон-кнопки в шапке — тоже слегка золотим */
+.btn.icon{
+  font-size:18px; padding:6px 10px;
+  border-color: var(--stroke);
+  background: rgba(0,0,0,0.15);
+  color: var(--gold-300);
+}
+.btn.icon:hover{
+  background: rgba(0,0,0,0.25);
+  color: var(--gold);
+}
+
 .btn.danger{background:#2a1518; border-color:#402325; color:#ffb5b5}
 .btn.file{position:relative; overflow:hidden}
 .btn.file input{position:absolute; inset:0; opacity:0; cursor:pointer}
@@ -110,7 +165,7 @@ body{
 ul{margin:6px 0 0 16px}
 h2,h3{margin:.2em 0 .4em}
 h3{font-size:16px; color:#cbd5e1}
-small,.hint{color:var(--muted)}
+small,.hint{color:rgba(255, 240, 200, 0.8)} /* подсказки чуть «теплее» */
 
 /* Треки */
 .tracks{list-style:none; margin:0; padding:0; max-height:260px}
@@ -129,29 +184,44 @@ small,.hint{color:var(--muted)}
 }
 .tracks .len{color:var(--muted); font-variant-numeric: tabular-nums}
 
-/* левое узкое меню */
+/* === Сайдбар: стекло + золотые акценты === */
 .sidepanel{
   position:fixed;
   top:0; bottom:0; left:0; right:auto;
   width:min(420px,96%); max-width:420px;
   transform:translateX(-110%); transition:transform .2s ease;
-  background:var(--card);
-  border-right:1px solid rgba(255,255,255,.06);
+  background:var(--glass-strong);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right:1px solid var(--stroke);
   z-index:50; display:flex; flex-direction:column;
+  box-shadow: var(--shadow);
 }
 .sidepanel.open{transform:none}
-.side-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06)}
-.side-tabs{display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06)}
-.stab{background:#0b1220; border:1px solid rgba(255,255,255,.08); color:var(--ink); padding:8px 10px; border-radius:999px; cursor:pointer}
-.stab.active{background:#182238}
+.side-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--stroke)}
+.side-tabs{display:flex; gap:6px; padding:8px 10px; border-bottom:1px solid var(--stroke)}
+.stab{
+  background:transparent;
+  border:1px solid transparent;
+  color:var(--gold-300);
+  padding:8px 10px; border-radius:999px; cursor:pointer;
+}
+.stab:hover{
+  border-color: var(--stroke);
+  background: rgba(0,0,0,0.15);
+  color: var(--gold);
+}
+.stab.active{
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.12);
+  color:#fff;
+}
 .side-content{padding:12px; overflow:auto; height:100%}
 .spanel{display:none}
 .spanel.visible{display:block}
 
 .history{display:flex; flex-direction:column; gap:8px; padding-left:18px}
 .history li{background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px}
-
-.app-footer{padding:8px 12px; background:rgba(15,23,42,.9)}
 
 /* мобильные переключатели */
 .mobile-only{display:none}
@@ -174,3 +244,12 @@ body.mobile .desktop-only{display:none}
   gap:12px;
 }
 #mode-music .row{ flex-wrap:wrap; } /* переносить селекты и кнопки на новую строку */
+
+/* На мобилках чуть меньше размытия для производительности */
+@media (hover:none), (pointer:coarse){
+  .app-header, .tabs, .sidepanel{
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+}
+/* bump */
