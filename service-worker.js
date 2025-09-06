@@ -11,7 +11,8 @@ const STATIC_ASSETS = [
   `${BASE}styles.css?v=${APP_VERSION}`,
   `${BASE}background.css?v=${APP_VERSION}`,   // ← если файла нет — не страшно
   `${BASE}app.js?v=${APP_VERSION}`,
-  `${BASE}items.js?v=${APP_VERSION}`,         // ← новый модуль с загрузкой базы
+  `${BASE}items.js?v=${APP_VERSION}`,
+  `${BASE}pricing.js?v=${APP_VERSION}`,         // ← новый модуль с загрузкой базы
   `${BASE}manifest.json`,
   `${BASE}data/items.json`,                   // ← БАЗА ПРЕДМЕТОВ ДЛЯ ОФФЛАЙНА
 ];

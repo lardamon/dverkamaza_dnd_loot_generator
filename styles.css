@@ -276,3 +276,21 @@ body.mobile .desktop-only{display:none}
     -webkit-backdrop-filter: blur(6px);
   }
 }
+/* === Формулы: читаемая «проза» и не вылезает за экран === */
+.prose{
+  background: rgba(11,18,32,0.22);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  padding:14px;
+  max-height:420px;
+  overflow:auto;
+}
+.prose code{
+  font-family: var(--mono);
+  background: rgba(0,0,0,.35);
+  padding: .1em .4em;
+  border-radius:.35em;
+  border:1px solid rgba(255,255,255,.08);
+}
+.nice-list{ margin:0; padding-left:18px; }
+.nice-list li{ margin:.55em 0; line-height:1.55; }

@@ -7,13 +7,9 @@
   <title>Генератор Лута D&D 5e от ДверьКамаза</title>
 
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=v2025-09-05-1" />
-
-  <!-- Прелоад фоновой картинки для быстрой первой отрисовки -->
-  <link rel="preload" as="image" href="./assets/img/site_background.webp" />
-
-  <!-- Отдельные стили фона (чтобы не трогать основной styles.css) -->
-  <link rel="stylesheet" href="background.css?v=v2025-09-05-1" />
+  <link rel="stylesheet" href="styles.css?v=v2025-09-06-3" />
+  <!-- если у тебя есть background.css — оставь строку ниже; если нет, можно удалить -->
+  <link rel="stylesheet" href="background.css?v=v2025-09-06-3" />
 
   <meta name="description" content="Офлайн PWA генератор лута D&D 5e на русском. Ванильный HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
@@ -34,6 +30,7 @@
           <button class="tab active" role="tab" aria-selected="true" data-tab="mode-battle">Бой</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="mode-env">Окружение</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="mode-music">Музыка</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="mode-formulas">Формулы</button>
         </div>
       </div>
 
@@ -117,6 +114,31 @@
         </div>
 
         <audio id="audio" preload="none"></audio>
+      </div>
+
+      <!-- Режим: Формулы -->
+      <div id="mode-formulas" class="mode">
+        <div class="formula prose scroll">
+          <h3>Базовые формулы D&D 5e</h3>
+          <ul class="nice-list">
+            <li><strong>Модификатор характеристики:</strong> <code>(Значение − 10) / 2</code>, округление вниз.</li>
+            <li><strong>КД персонажа без доспеха:</strong> <code>10 + модификатор Ловкости</code></li>
+            <li><strong>Безоружный удар (атака):</strong> <code>1к20 + бонус мастерства + модификатор Силы</code></li>
+            <li><strong>Урон безоружного удара:</strong> <code>1 + модификатор Силы</code></li>
+            <li><strong>Рукопашная атака оружием:</strong> <code>1к20 + бонус мастерства + модификатор Силы</code> <span class="hint">(для фехтовального можно Ловкость)</span></li>
+            <li><strong>Урон рукопашной атаки оружием:</strong> <code>Кость оружия + модификатор Силы</code> <span class="hint">(фехтовальное — можно Ловкость)</span></li>
+            <li><strong>Дальнобойная атака оружием:</strong> <code>1к20 + бонус мастерства + модификатор Ловкости</code> <span class="hint">(метательное — тот же модификатор, что и в рукопашной)</span></li>
+            <li><strong>Урон дальнобойной атаки оружием:</strong> <code>Кость оружия + модификатор Ловкости</code> <span class="hint">(метательное — тот же модификатор, что и в рукопашной)</span></li>
+            <li><strong>Атака заклинанием:</strong> <code>1к20 + бонус мастерства + модификатор базовой характеристики</code></li>
+            <li><strong>Урон заклинания:</strong> <em>зависит от заклинания</em></li>
+            <li><strong>Сложность спасброска от заклинания:</strong> <code>8 + модификатор базовой характеристики + бонус мастерства</code></li>
+            <li><strong>Порядок ходов (инициатива):</strong> <code>1к20 + модификатор Ловкости</code></li>
+            <li><strong>Спасбросок:</strong> <code>1к20 + модификатор характеристики</code> <span class="hint">(+ бонус мастерства при владении)</span></li>
+            <li><strong>Пассивное Восприятие:</strong> <code>10 + модификатор Мудрости (Восприятие)</code></li>
+            <li><strong>Стабилизация умирающего:</strong> <code>1к20 + модификатор Мудрости (Медицина)</code> против <code>Сл 10</code></li>
+            <li><strong>Применение инструментов:</strong> <code>1к20 + модификатор характеристики</code> <span class="hint">(+ бонус мастерства при владении)</span></li>
+          </ul>
+        </div>
       </div>
 
       <div class="row wrap gap mt">
@@ -209,13 +231,13 @@
   </footer>
 
   <script src="version.js"></script>
-  <script>
-    document.getElementById('appVersion').textContent = APP_VERSION;
-  </script>
-  <script src="items.js?v=v2025-09-06-1" defer></script>
+  <script>document.getElementById('appVersion').textContent = APP_VERSION;</script>
 
-  <script src="app.js?v=v2025-09-06-1" defer></script>
-  <script src="app.js?v=v2025-09-05-1" defer></script>
+  <!-- База + прайсинг -->
+  <script src="items.js?v=v2025-09-06-3" defer></script>
+  <script src="pricing.js?v=v2025-09-06-3" defer></script>
+
+  <script src="app.js?v=v2025-09-06-3" defer></script>
 
   <script>
     if ('serviceWorker' in navigator) {
