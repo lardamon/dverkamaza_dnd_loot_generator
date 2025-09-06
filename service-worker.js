@@ -1,27 +1,19 @@
 // service-worker.js — PWA Loot Generator
 importScripts('version.js');
 
-// origin/BASE — надёжные для GitHub Pages (и для корня, и для /repo-name/)
-const ORIGIN = self.location.origin;
-const BASE = new URL(self.registration.scope).pathname;
-
 const CACHE_NAME = `lootgen-${APP_VERSION}`;
 
-// Предкэш критичных статик-ассетов.
-// Важно: держим версии через ?v=${APP_VERSION} для CSS/JS,
-// и добавляем фон + отдельный файл background.css.
+const BASE = self.registration.scope.replace(self.origin, '');
+
 const STATIC_ASSETS = [
   `${BASE}`,
   `${BASE}index.html`,
   `${BASE}styles.css?v=${APP_VERSION}`,
-  `${BASE}background.css?v=${APP_VERSION}`,
+  `${BASE}background.css?v=${APP_VERSION}`,   // ← если файла нет — не страшно
   `${BASE}app.js?v=${APP_VERSION}`,
+  `${BASE}items.js?v=${APP_VERSION}`,         // ← новый модуль с загрузкой базы
   `${BASE}manifest.json`,
-  // Фоновая картинка (без версии, норм для долгоживущего ассета)
-  `${BASE}assets/img/site_background.webp`,
-  // При необходимости добавь сюда data/*.json, иконки, музыку и т.д.:
-  // `${BASE}data/items.json`,
-  // `${BASE}assets/music/track1.mp3`,
+  `${BASE}data/items.json`,                   // ← БАЗА ПРЕДМЕТОВ ДЛЯ ОФФЛАЙНА
 ];
 
 // install
@@ -55,16 +47,14 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  const isSameOrigin = url.origin === ORIGIN;
+  const isSameOrigin = url.origin === self.origin;
   const acceptsHTML = req.headers.get('accept')?.includes('text/html');
 
-  // HTML / навигация: online-first с офлайн-фолбэком на index.html
   if (req.mode === 'navigate' || (req.method === 'GET' && acceptsHTML)) {
     event.respondWith(handleHTMLRequest(event));
     return;
   }
 
-  // Статика своего домена: stale-while-revalidate
   if (isSameOrigin) {
     const pathname = url.pathname;
     const isStatic =
