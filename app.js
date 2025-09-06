@@ -1,9 +1,10 @@
-/* Лут v3.3.1 — новый баланс (CR-бенды, d20-сдвиг, босс) + совместимость со старым форматом
-   - Автоопределение формата предметов: новый (name, rarity EN, source_code, url) или старый.
-   - Новый режим: 7 CR-бандов, ящики 0.5/1/1.5, босс множитель монет + микрошанс артефакта.
-   - d20: 1 → −3 ступени; 2–5 → −1; 6–15 → 0; 16–19 → +1; 20 → +3 (монеты — отдельные множители).
-   - Нормализация редкости: принимает RU/EN/varies. «varies» проходит в любую (кроме artifact).
-   - Гемы не трогаем (как и просил), старый функционал оставлен.
+/* Лут v3.2 — мобильные улучшения + установка PWA по-умному:
+   - На мобильных CR и d20 → select (без клавиатуры и без авто-зумма).
+   - Всем полям задан шрифт 16px (CSS) → iOS не зумит.
+   - После генерации: blur() активного поля и scrollIntoView() к результату.
+   - Секция установки PWA скрыта по умолчанию. Появляется, когда реально есть beforeinstallprompt.
+     На iOS — показываем короткий хинт. В режиме standalone — скрываем совсем.
+   - Вкладка «Инструкция» удалена.
 */
 
 const LS_KEYS = {
@@ -23,70 +24,10 @@ const STATE = {
   deferredPrompt: null,
   lastResult: null,
   music: { categories: [], tracks: [], filtered: [], currentIndex: -1, shuffle: false, loop: false, volume: 0.8, currentCategory: null },
-  isMobile: false,
-  newItemsFormat: false // переключатель «новых предметов» (очищенный items.json)
+  isMobile: false
 };
 
-/* ====== НОВЫЙ БАЛАНС (для «новых предметов») ====== */
-const NB_ORDER = ['common','uncommon','rare','very_rare','legendary','artifact'];
-
-const NB_COINS = {
-  bands: [
-    { cr_min:1,  cr_max:4,  dice:'3d6', mult:5  },
-    { cr_min:5,  cr_max:8,  dice:'4d6', mult:10 },
-    { cr_min:9,  cr_max:12, dice:'5d6', mult:20 },
-    { cr_min:13, cr_max:16, dice:'6d6', mult:40 },
-    { cr_min:17, cr_max:20, dice:'7d6', mult:75 },
-    { cr_min:21, cr_max:24, dice:'8d6', mult:125},
-    { cr_min:25, cr_max:30, dice:'9d6', mult:200}
-  ],
-  d20_factor: [
-    {min:1,max:1,   factor:0.50},
-    {min:2,max:2,   factor:0.70},
-    {min:3,max:5,   factor:0.85},
-    {min:6,max:15,  factor:1.00},
-    {min:16,max:18, factor:1.15},
-    {min:19,max:19, factor:1.30},
-    {min:20,max:20, factor:1.50}
-  ],
-  chest_mult: { small:0.5, medium:1.0, large:1.5 },
-  boss_mult: 2,
-  min_coins: 1
-};
-
-const NB_CAPS = {
-  caps: {
-    normal: {
-      "1-4":  ["common","uncommon"],
-      "5-8":  ["common","uncommon"],
-      "9-12": ["common","uncommon","rare"],
-      "13-16":["common","uncommon","rare"],
-      "17-20":["common","uncommon","rare"],
-      "21-24":["common","uncommon","rare"],
-      "25-30":["common","uncommon","rare"]
-    },
-    boss: {
-      "1-4":  ["common","uncommon","rare","very_rare"],
-      "5-8":  ["common","uncommon","rare","very_rare"],
-      "9-12": ["common","uncommon","rare","very_rare"],
-      "13-16":["common","uncommon","rare","very_rare","legendary"],
-      "17-20":["common","uncommon","rare","very_rare","legendary"],
-      "21-24":["common","uncommon","rare","very_rare","legendary"],
-      "25-30":["common","uncommon","rare","very_rare","legendary"]
-    }
-  },
-  boss_artifact_chance: [
-    {cr_min:1,  cr_max:12, pct:0.00},
-    {cr_min:13, cr_max:16, pct:0.05},
-    {cr_min:17, cr_max:20, pct:0.10},
-    {cr_min:21, cr_max:24, pct:0.25},
-    {cr_min:25, cr_max:30, pct:0.50}
-  ],
-  boss_artifact_d20_bonus: { on20_x:2.0, on1_x:0.0 }
-};
-
-/* ====== СТАРЫЕ константы — для legacy режима ====== */
-const RARITY_MAP_RU = { ordinary:'обычный', rare:'редкий', very_rare:'очень редкий', legendary:'легендарный' };
+const RARITY_MAP = { ordinary:'обычный', rare:'редкий', very_rare:'очень редкий', legendary:'легендарный' };
 const RARITY_ORDER = ['legendary','very_rare','rare','ordinary'];
 
 const ENVELOPES = {
@@ -119,7 +60,7 @@ async function fetchJson(path){ const r=await fetch(path); if(!r.ok) throw new E
 async function loadData(){
   const [itemsBase,gemsBase,tablesBase,musicBase] = await Promise.all([
     fetchJson('./data/items.json'),
-    fetchJson('./data/gems.json').catch(()=>({small:[],rare:[]})), // опционально
+    fetchJson('./data/gems.json'),
     fetchJson('./data/tables.json'),
     fetchJson('./data/music.json').catch(()=>({categories:[],tracks:[]}))
   ]);
@@ -127,116 +68,13 @@ async function loadData(){
   const gemsOverride   = loadFromLS(LS_KEYS.GEMS, null);
   const tablesOverride = loadFromLS(LS_KEYS.TABLES, null);
 
-  const itemsMaybe = Array.isArray(itemsOverride)?itemsOverride:itemsBase;
-
-  // поддержка форматов: [ ... ] или { items:[...] }
-  const itemsArr =
-    Array.isArray(itemsMaybe) ? itemsMaybe :
-    (Array.isArray(itemsMaybe.items) ? itemsMaybe.items : []);
-
-  // новый формат — если у первого предмета есть source_code или rarity EN-подобная
-  const first = itemsArr[0];
-  STATE.newItemsFormat = !!(first && typeof first==='object' && (
-    'source_code' in first || 'sourceCode' in first ||
-    ['common','uncommon','rare','very_rare','legendary','artifact','varies'].includes(String(first.rarity||'').toLowerCase())
-  ));
-
-  STATE.data.items  = itemsArr;
-  STATE.data.gems   = (gemsOverride && (gemsOverride.small||gemsOverride.rare)) ? gemsOverride : gemsBase;
-  STATE.data.tables = (tablesOverride && tablesOverride.tiers) ? tablesOverride : tablesBase;
+  STATE.data.items  = Array.isArray(itemsOverride)?itemsOverride:itemsBase;
+  STATE.data.gems   = gemsOverride && gemsOverride.small ? gemsOverride : gemsBase;
+  STATE.data.tables = tablesOverride && tablesOverride.tiers ? tablesOverride : tablesBase;
   STATE.data.music  = musicBase;
-
-  console.log('[init] items format:', STATE.newItemsFormat ? 'NEW' : 'LEGACY', 'count=', STATE.data.items.length);
 }
 
-/* ============================================================
-   НОВЫЙ БАЛАНС (coins + items)
-   ============================================================ */
-function nb_rollXdY(spec){
-  const m = String(spec).trim().match(/^(\d+)d(\d+)$/i); if(!m) return 0;
-  const n = +m[1], d = +m[2]; let s = 0; for(let i=0;i<n;i++) s += 1 + Math.floor(Math.random()*d); return s;
-}
-function nb_pickBand(cr){
-  cr = Math.max(1, Math.min(30, +cr || 1));
-  return NB_COINS.bands.find(b => cr>=b.cr_min && cr<=b.cr_max) || NB_COINS.bands[NB_COINS.bands.length-1];
-}
-function nb_d20CoinFactor(d20){
-  d20 = clamp(+d20||1,1,20);
-  for(const r of NB_COINS.d20_factor){ if(d20>=r.min && d20<=r.max) return r.factor; }
-  return 1.0;
-}
-function nb_d20Shift(d20){
-  d20 = clamp(+d20||1,1,20);
-  if(d20===1) return -3;
-  if(d20>=2 && d20<=5) return -1;
-  if(d20>=6 && d20<=15) return 0;
-  if(d20>=16 && d20<=19) return +1;
-  if(d20===20) return +3;
-  return 0;
-}
-function nb_keyForCaps(cr){
-  return cr<=4 ? "1-4" : cr<=8 ? "5-8" : cr<=12 ? "9-12" : cr<=16 ? "13-16" : cr<=20 ? "17-20" : cr<=24 ? "21-24" : "25-30";
-}
-function nb_capList(cr, isBoss){
-  const key = nb_keyForCaps(cr);
-  const caps = isBoss ? NB_CAPS.caps.boss[key] : NB_CAPS.caps.normal[key];
-  return caps || [];
-}
-function nb_shiftRarity(r, shift, allowed){
-  if(!NB_ORDER.includes(r)) r = allowed[0] || "common";
-  let i = NB_ORDER.indexOf(r) + shift;
-  const iMin = NB_ORDER.indexOf(allowed[0]);
-  const iMax = NB_ORDER.indexOf(allowed[allowed.length-1]);
-  i = Math.max(iMin, Math.min(i, iMax));
-  return NB_ORDER[i];
-}
-function nb_rollBossArtifact(cr, d20){
-  const band = NB_CAPS.boss_artifact_chance.find(b => cr>=b.cr_min && cr<=b.cr_max);
-  if(!band) return false;
-  let pct = band.pct;
-  if(d20===20) pct *= NB_CAPS.boss_artifact_d20_bonus.on20_x;
-  if(d20===1)  pct *= NB_CAPS.boss_artifact_d20_bonus.on1_x;
-  return Math.random()*100 < pct;
-}
-function nb_generateCoins({cr,d20,chestSize,isBoss}){
-  const band = nb_pickBand(cr);
-  const base = nb_rollXdY(band.dice) * band.mult;
-  const fD20 = nb_d20CoinFactor(d20);
-  const fChest = NB_COINS.chest_mult[String(chestSize)] ?? 1;
-  const fBoss = isBoss ? NB_COINS.boss_mult : 1;
-  const out = Math.round(base * fD20 * fChest * fBoss);
-  return Math.max(out, NB_COINS.min_coins || 0);
-}
-function nb_generateItem({cr,d20,isBoss,items}){
-  if(!Array.isArray(items) || !items.length) return null;
-
-  if(isBoss && nb_rollBossArtifact(cr, d20)){
-    const arts = items.filter(it => String(it.rarity||'').toLowerCase()==='artifact');
-    if(arts.length) return arts[Math.floor(Math.random()*arts.length)];
-  }
-
-  const allowed = nb_capList(cr, isBoss);
-  if(!allowed.length) return null;
-
-  let r = allowed[allowed.length-1];
-  r = nb_shiftRarity(r, nb_d20Shift(d20), allowed);
-
-  // подбираем предмет целевой редкости, если пусто — понижаем
-  let i = NB_ORDER.indexOf(r);
-  while(i>=0){
-    const rn = NB_ORDER[i];
-    const bucket = items.filter(it => {
-      const rr = String(it.rarity||'').toLowerCase();
-      if (rn === 'artifact') return rr === 'artifact';
-      return rr === rn || rr === 'varies';
-    });
-    if(bucket.length) return bucket[Math.floor(Math.random()*bucket.length)];
-    i--;
-  }
-  return null;
-}
-
-/* ---------- монеты (legacy) ---------- */
+/* ---------- монеты ---------- */
 const COIN_TABLE = [
   { label:'0-1',  dice:[1,6], mult:1 },
   { label:'2-3',  dice:[2,6], mult:1 },
@@ -258,7 +96,7 @@ function splitCoins(totalGP){
   return { pm, zm, sm, mm };
 }
 
-/* ---------- Tier / Hoard (legacy) ---------- */
+/* ---------- Tier / Hoard ---------- */
 function findTierByCR(cr){ const t=STATE.data.tables.tiers; for(const x of t){ if(cr>=x.min_cr && cr<=x.max_cr) return x; } return t[t.length-1]; }
 function getTierByLabel(label){ return STATE.data.tables.tiers.find(t=>t.label===label) ?? STATE.data.tables.tiers[0]; }
 function hoardBandForTierLabel(label){
@@ -268,7 +106,7 @@ function hoardBandForTierLabel(label){
   return '17+';
 }
 
-/* ---------- d20 / редкость (legacy) ---------- */
+/* ---------- d20 / редкость ---------- */
 function getMultipliersForD20(d20){
   const v=clamp(Number(d20)||1,1,20);
   if(v===1) return {budget:0.60, coins:0.10};
@@ -278,28 +116,13 @@ function getMultipliersForD20(d20){
   if(v<=19) return {budget:1.25, coins:1.30};
   return {budget:1.40, coins:1.50};
 }
-
-/* ===== НОРМАЛИЗАЦИЯ РЕДКОСТИ (RU/EN/VARIES) ===== */
-const RARITY_KEY_FROM_TEXT = (txt) => {
-  const s = String(txt || '').toLowerCase();
-  if (!s) return null;
-  if (s.includes('artifact') || s.includes('артефакт')) return 'artifact';
-  if (s.includes('legend')   || s.includes('легендар')) return 'legendary';
-  if (s.includes('very')     || s.includes('очень редк')) return 'very_rare';
-  if (s.includes('rare')     || s.includes('редк')) return 'rare';
-  if (s.includes('uncommon') || s.includes('необыч')) return 'ordinary';
-  if (s.includes('common')   || s.includes('обыч')) return 'ordinary';
-  if (s.includes('varies')   || s.includes('варьиру')) return 'varies';
-  return null;
-};
-
 function tiltRarityByD20(baseChance, d20, allowed){
   const p={ ordinary:baseChance.ordinary||0, rare:baseChance.rare||0, very_rare:baseChance.very_rare||0, legendary:baseChance.legendary||0 };
   const v=clamp(Number(d20)||1,1,20);
   if(v===1){ p.ordinary=1; p.rare=p.very_rare=p.legendary=0; }
   else if(v<=5){ const r0=p.rare, vr0=p.very_rare, l0=p.legendary; p.rare*=0.5; p.very_rare*=0.5; p.legendary=0; const freed=(r0-p.rare)+(vr0-p.very_rare)+l0; p.ordinary+=freed; }
   else if(v>=16 && v<=19){ const move=Math.min(p.ordinary,p.ordinary*0.30); p.ordinary-=move; p.rare+=move*0.60; p.very_rare+=move*0.40; }
-  else if(v===20){ let move=Math.min(p.ordinary,p.ordinary*0.40); p.ordinary-=move; p.rare+=move*0.60; p.very_rare+=move*0.40; }
+  else if(v===20){ let move=Math.min(p.ordinary,p.ordinary*0.40); p.ordinary-=move; p.rare+=move*0.60; p.very_rare+=move*0.40; if(allowed.legendary){ const addL=0.05; if(p.ordinary>=addL)p.ordinary-=addL,p.legendary+=addL; else if(p.rare>=addL)p.rare-=addL,p.legendary+=addL; else if(p.very_rare>=addL)p.very_rare-=addL,p.legendary+=addL; } }
   for(const k of Object.keys(p)){ if(!allowed[k]) p[k]=0; p[k]=Math.max(0,p[k]); }
   const s=p.ordinary+p.rare+p.very_rare+p.legendary;
   if(s>0){ for(const k of Object.keys(p)) p[k]/=s; } else { p.ordinary=1; p.rare=p.very_rare=p.legendary=0; }
@@ -307,7 +130,7 @@ function tiltRarityByD20(baseChance, d20, allowed){
 }
 function sampleRarity(ch){ const r=Math.random(); let a=0; for(const k of ['ordinary','rare','very_rare','legendary']){ a+=(ch[k]??0); if(r<a) return k; } return 'ordinary'; }
 
-/* ---------- gems (legacy) ---------- */
+/* ---------- gems ---------- */
 function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function rareGemCapForBand(b){ if(b==='0-4')return 0; if(b==='5-10')return 250; if(b==='11-16')return 500; return Infinity; }
 function rareGemBaseChanceForBand(b){ if(b==='0-4')return 0; if(b==='5-10')return 0.12; if(b==='11-16')return 0.20; return 0.30; }
@@ -315,10 +138,10 @@ function d20RareModifier(v){ v=clamp(Number(v)||1,1,20); if(v===1)return 0; if(v
 function maybeSmallGems(tierLbl, cap){
   const base=0.40, bump=['8-10','11-13','14-16','17+'].includes(tierLbl)?0.1:0;
   const picks=[];
-  if(Math.random()<base+bump){ const cnt=randInt(1,2); for(let i=0;i<cnt;i++) picks.push({...pickRandom(STATE.data.gems.small||[])}); }
+  if(Math.random()<base+bump){ const cnt=randInt(1,2); for(let i=0;i<cnt;i++) picks.push({...pickRandom(STATE.data.gems.small)}); }
   picks.sort((a,b)=>b.value_gp-a.value_gp);
-  let sum=picks.reduce((s,g)=>s+ (g?.value_gp||0),0);
-  while(sum>cap && picks.length){ picks.shift(); sum=picks.reduce((s,g)=>s+(g?.value_gp||0),0); }
+  let sum=picks.reduce((s,g)=>s+g.value_gp,0);
+  while(sum>cap && picks.length){ picks.shift(); sum=picks.reduce((s,g)=>s+g.value_gp,0); }
   return picks;
 }
 function maybeRareGemsControlled(tierLbl, d20, cap){
@@ -327,35 +150,27 @@ function maybeRareGemsControlled(tierLbl, d20, cap){
   if(gemCap<=0) return [];
   let chance=rareGemBaseChanceForBand(band)*d20RareModifier(d20);
   if(Math.random()<chance){
-    const pool=(STATE.data.gems.rare||[]).filter(g=> (g?.value_gp||0) <= gemCap);
+    const pool=STATE.data.gems.rare.filter(g=>(g.value_gp||0)<=gemCap);
     if(!pool.length) return [];
     return [{...pickRandom(pool)}];
   }
   return [];
 }
 
-/* ---------- предметы (legacy) с нормализацией редкости ---------- */
+/* ---------- предметы ---------- */
 function rarityAllowedForTier(k, ch){ return (ch[k]??0)>0; }
 function filterCandidates(source, tierObj, rarityKey){
-  const rarRu  = RARITY_MAP_RU[rarityKey];   // целевая редкость в RU для совместимости
-  const maxCR  = tierObj.max_cr;
-
+  const rarRu=RARITY_MAP[rarityKey], maxTier=tierObj.max_cr;
   return STATE.data.items.filter(it=>{
-    const itKey = RARITY_KEY_FROM_TEXT(it.rarity);
-    const rarOk =
-      itKey === rarityKey ||
-      (itKey === 'varies' && ['ordinary','rare','very_rare','legendary'].includes(rarityKey)) ||
-      (!itKey && typeof it.rarity==='string' && it.rarity.toLowerCase().includes(rarRu)); // RU-фолбек
-
-    const tierOk = (typeof it.tier==='number') ? (it.tier<=maxCR) : true;
-    const srcOk  = Array.isArray(it.loot_source) ? it.loot_source.includes(source) : true;
-
-    return rarOk && tierOk && srcOk;
+    const tierOk= typeof it.tier==='number' ? it.tier<=maxTier : true;
+    const srcOk= Array.isArray(it.loot_source) ? it.loot_source.includes(source) : true;
+    const rarOk=(it.rarity||'').toLowerCase()===rarRu;
+    return tierOk && srcOk && rarOk;
   });
 }
 function pickByD20(list, d20){ if(!list.length) return null; const idx=(clamp(d20,1,20)-1)%list.length; return list[idx]; }
 
-/* ---------- конверты (legacy) ---------- */
+/* ---------- конверты ---------- */
 function getEnvelopeShares(source,d20){
   const t=(clamp(Number(d20)||1,1,20)-1)/19;
   const cfg= source==='mob'?ENVELOPES.mob:ENVELOPES.chest;
@@ -365,56 +180,8 @@ function getEnvelopeShares(source,d20){
   return {coins,items,gems};
 }
 
-/* ============================================================
-   ГЛАВНАЯ ГЕНЕРАЦИЯ
-   ============================================================ */
-
-function generateLoot_new({ source, cr=null, containerSize=null, selectedTierLabel=null, d20=null, isBoss=false }){
-  // монеты
-  let chestSize = 'medium';
-  if (source==='chest') {
-    const v = String(containerSize||'').toLowerCase();
-    if (v.includes('мал') || v.includes('small')) chestSize='small';
-    else if (v.includes('бол') || v.includes('large')) chestSize='large';
-  }
-  const effectiveCR = source==='mob' ? cr : (STATE.isMobile?Number($('#crSelect').value||1):Number($('#crInput').value||1));
-  const coins = nb_generateCoins({ cr:effectiveCR, d20, chestSize, isBoss });
-
-  // предметы: берём из общего пула (уже отфильтрован по источникам при подготовке файла)
-  const items = [];
-  const maxItems = STATE.settings.maxItems ?? 1;
-  for (let i=0;i<maxItems;i++){
-    const it = nb_generateItem({ cr:effectiveCR, d20, isBoss, items: STATE.data.items });
-    if (it) items.push(it);
-  }
-
-  // возврат в формате, совместимом с текущим UI
-  const coins_breakdown = splitCoins(coins);
-  const totalValue = coins; // цены у предметов нет — считаем только монеты
-  return {
-    input:{source, cr:effectiveCR, containerSize, tier:selectedTierLabel||null, d20, boss:!!isBoss},
-    budget_gp: coins,
-    envelopes:{shares:{coins:1,items:0,gems:0},caps:{coins:coins,items:0,gems:0},coin_floor:0,overflow_allowance:0},
-    coins_gp: coins,
-    coins_breakdown,
-    items: items.map(it=>({
-      name: it.name,
-      rarity: it.rarity,
-      type: it.type || '',
-      value_gp: it.value_gp || null,
-      description: it.description || '',
-      url: it.url || '',
-      source_code: it.source_code || '',
-      source_title: it.source_title || ''
-    })),
-    smallGems: [],
-    rareGems: [],
-    totalValue_gp: Number(totalValue.toFixed(2))
-  };
-}
-
-function generateLoot_legacy(opts){
-  const { source, cr=null, containerSize=null, selectedTierLabel=null, d20=null, isBoss=false } = opts;
+/* ---------- генерация ---------- */
+function generateLoot({ source, cr=null, containerSize=null, selectedTierLabel=null, d20=null, isBoss=false }){
   const settings=STATE.settings||DEFAULT_SETTINGS;
   const D20=clamp(Number(d20)||1,1,20);
   const {budget:budgetMul, coins:coinsMul}=getMultipliersForD20(D20);
@@ -464,9 +231,9 @@ function generateLoot_legacy(opts){
   while(items.length<maxItems){ break; }
 
   const smallGems=maybeSmallGems(tierObj.label,gemsCap);
-  const smallVal =smallGems.reduce((s,g)=>s+(Number(g?.value_gp)||0),0);
+  const smallVal =smallGems.reduce((s,g)=>s+g.value_gp,0);
   const rareGems =maybeRareGemsControlled(tierObj.label,D20,Math.max(0,gemsCap-smallVal));
-  const rareVal  =rareGems.reduce((s,g)=>s+(Number(g?.value_gp)||0),0);
+  const rareVal  =rareGems.reduce((s,g)=>s+g.value_gp,0);
 
   const itemsValue=items.reduce((s,it)=>s+(Number(it.value_gp)||0),0);
   const coinFloorFromPct=Math.round(budget*(FLOOR.coinFloorPctTotal||0));
@@ -515,23 +282,18 @@ function renderResult(res){
   const itemsList=$('#itemsList'); itemsList.innerHTML='';
   res.items.forEach(it=>{
     const li=document.createElement('li');
-    const nameHtml = it.url ? `<a href="${it.url}" target="_blank" rel="noreferrer">${it.name}</a>` : `<strong>${it.name}</strong>`;
-    const srcHtml = (it.source_code ? ` <span class="hint">[${it.source_code}${it.source_title?` · ${it.source_title}`:''}]</span>` : '');
-    const meta1 = [it.rarity, it.type].filter(Boolean).join(', ');
-    const meta2 = (it.value_gp!=null ? `~${it.value_gp} gp` : '');
-    const desc  = it.description || '';
-    li.innerHTML = `${nameHtml}${srcHtml} — ${meta1 || 'предмет'} ${meta2?`<br><span class="hint">${meta2}</span>`:''}${desc?`<br><span class="hint">${desc}</span>`:''}`;
+    li.innerHTML=`<strong>${it.name}</strong> — ${it.rarity}, ${it.type} <br><span class="hint">~${it.value_gp} gp</span><br><span class="hint">${it.description||''}</span>`;
     itemsList.appendChild(li);
   });
   if(!res.items.length){ const li=document.createElement('li'); li.textContent='—'; itemsList.appendChild(li); }
 
   const sUl=$('#smallGemsList'); sUl.innerHTML='';
-  (res.smallGems||[]).forEach(g=>{ const li=document.createElement('li'); li.textContent=`${g.name} (~${g.value_gp} gp)`; sUl.appendChild(li); });
-  if(!res.smallGems || !res.smallGems.length){ const li=document.createElement('li'); li.textContent='—'; sUl.appendChild(li); }
+  res.smallGems.forEach(g=>{ const li=document.createElement('li'); li.textContent=`${g.name} (~${g.value_gp} gp)`; sUl.appendChild(li); });
+  if(!res.smallGems.length){ const li=document.createElement('li'); li.textContent='—'; sUl.appendChild(li); }
 
   const rUl=$('#rareGemsList'); rUl.innerHTML='';
-  (res.rareGems||[]).forEach(g=>{ const li=document.createElement('li'); li.textContent=`${g.name} (~${g.value_gp} gp)`; rUl.appendChild(li); });
-  if(!res.rareGems || !res.rareGems.length){ const li=document.createElement('li'); li.textContent='—'; rUl.appendChild(li); }
+  res.rareGems.forEach(g=>{ const li=document.createElement('li'); li.textContent=`${g.name} (~${g.value_gp} gp)`; rUl.appendChild(li); });
+  if(!res.rareGems.length){ const li=document.createElement('li'); li.textContent='—'; rUl.appendChild(li); }
 
   $('#totalValue').textContent = formatGP(res.totalValue_gp);
 }
@@ -611,15 +373,22 @@ function detectMobile(){
   STATE.isMobile = isMobile;
   document.body.classList.toggle('mobile', isMobile);
 
+  // заполнить селекты CR/d20 на мобайле
   if (isMobile){
     const crSel = $('#crSelect'); if (crSel){ crSel.innerHTML=''; for(let i=0;i<=30;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=String(i); crSel.appendChild(o);} crSel.value='1';}
     const d20Sel = $('#d20Select'); if (d20Sel){ d20Sel.innerHTML=''; for(let i=1;i<=20;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=String(i); d20Sel.appendChild(o);} }
     const d20SelEnv = $('#d20SelectEnv'); if (d20SelEnv){ d20SelEnv.innerHTML=''; for(let i=1;i<=20;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=String(i); d20SelEnv.appendChild(o);} }
   }
 }
-function getCR(){ return STATE.isMobile ? Number($('#crSelect').value||1) : Number($('#crInput').value||1); }
-function getD20Battle(){ return STATE.isMobile ? Number($('#d20Select').value||0) : Number($('#d20Input').value||0); }
-function getD20Env(){ return STATE.isMobile ? Number($('#d20SelectEnv').value||0) : Number($('#d20InputEnv').value||0); }
+function getCR(){
+  return STATE.isMobile ? Number($('#crSelect').value||1) : Number($('#crInput').value||1);
+}
+function getD20Battle(){
+  return STATE.isMobile ? Number($('#d20Select').value||0) : Number($('#d20Input').value||0);
+}
+function getD20Env(){
+  return STATE.isMobile ? Number($('#d20SelectEnv').value||0) : Number($('#d20InputEnv').value||0);
+}
 
 function afterGenerateFocusFix(){
   if (document.activeElement && typeof document.activeElement.blur==='function') document.activeElement.blur();
@@ -659,11 +428,13 @@ function triggerInstall(){
 function bindEvents(){
   // табы
   $$('.tab').forEach(btn=> btn.addEventListener('click', ()=>{
+    // переключение вкладок
     $$('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     $$('.mode').forEach(m=>m.classList.remove('visible'));
     const targetId = btn.dataset.tab;
     document.getElementById(targetId).classList.add('visible');
 
+    // показывать/скрывать карточку "Результат": прячем на вкладке Музыка
     const isMusic = targetId === 'mode-music';
     const resultCard = $('#resultCard');
     if (resultCard) resultCard.hidden = isMusic;
@@ -674,23 +445,18 @@ function bindEvents(){
     const activeTab=$('.tab.active').dataset.tab;
 
     if(activeTab==='mode-battle'){
-      const cr = clamp(getCR(),1,30);
+      const cr = clamp(getCR(),0,30);
       const d20 = getD20Battle();
       if(!d20){ alert('Укажите результат d20 (1–20).'); return; }
       const boss=$('#bossCheck').checked;
-      const res = STATE.newItemsFormat
-        ? generateLoot_new({source:'mob', cr, d20, isBoss:boss})
-        : generateLoot_legacy({source:'mob', cr, d20, isBoss:boss});
+      const res=generateLoot({source:'mob', cr, d20, isBoss:boss});
       renderResult(res); afterGenerateFocusFix();
     } else if (activeTab==='mode-env'){
       const container=$('#containerSelect').value;
       const label=$('#tierSelect').value;
       const d20=getD20Env();
       if(!d20){ alert('Укажите результат d20 (1–20).'); return; }
-      const cr = clamp(getCR(),1,30); // для нового режима монет нужен CR
-      const res = STATE.newItemsFormat
-        ? generateLoot_new({source:'chest', containerSize:container, selectedTierLabel:label, d20, cr})
-        : generateLoot_legacy({source:'chest', containerSize:container, selectedTierLabel:label, d20});
+      const res=generateLoot({source:'chest', containerSize:container, selectedTierLabel:label, d20});
       renderResult(res); afterGenerateFocusFix();
     } else {
       alert('Вы на вкладке Музыка. Переключитесь на Бой/Окружение для генерации лута.');
@@ -733,6 +499,7 @@ function bindEvents(){
   $('#prevBtn')?.addEventListener('click', musicPrev);
   $('#shuffleBtn')?.addEventListener('click', ()=>{ STATE.music.shuffle=!STATE.music.shuffle; setBtnActive('#shuffleBtn',STATE.music.shuffle); saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:STATE.music.volume}); });
   $('#loopBtn')?.addEventListener('click', ()=>{ STATE.music.loop=!STATE.music.loop; setBtnActive('#loopBtn',STATE.music.loop); saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:STATE.music.volume}); });
+  $('#volumeRange')?.addEventListener('input', (e)=>{ const v=clamp(Number(e.target.value)||0.8,0,1); $('#audio').volume=v; STATE.music.volume=v; saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:v}); });
 
   // установка PWA
   $('#installBtn').addEventListener('click', triggerInstall);
@@ -749,6 +516,7 @@ async function init(){
   initMusic();
   setupInstallHint();
 
+  // при старте на бою/окружении "Результат" виден
   const resultCard = $('#resultCard');
   if (resultCard) resultCard.hidden = false;
 }
@@ -769,5 +537,3 @@ function fillTierSelect(){
     sel.appendChild(opt);
   }
 }
-
-/* конец */
