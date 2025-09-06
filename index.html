@@ -7,11 +7,21 @@
   <title>Генератор Лута D&D 5e от ДверьКамаза</title>
 
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=v2025-09-06-3" />
-  <!-- если у тебя есть background.css — оставь строку ниже; если нет, можно удалить -->
-  <link rel="stylesheet" href="background.css?v=v2025-09-06-3" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="background.css" />
 
-  <meta name="description" content="Офлайн PWA генератор лута D&D 5e на чистом клиентском стеке. Работает локально, умеет бюджет, d20, CR и контейнеры. Простой HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
+  <meta name="description" content="Офлайн PWA генератор лута D&D 5e на чистом клиентском стеке." />
+  <style>
+    /* жестко починить чекбоксы, если глобальные стили их ломают */
+    #sourcesBox input[type="checkbox"]{
+      appearance:auto; -webkit-appearance:checkbox; -moz-appearance:checkbox;
+      width:auto; height:auto; inline-size:auto; block-size:auto;
+      margin-right:8px;
+      accent-color:#ffd86b;
+    }
+    #sourcesBox label{ display:flex; align-items:center; gap:.25rem; padding:.25rem 0; }
+    footer.app-footer{ opacity:.8; text-align:center; margin:24px 0; }
+  </style>
 </head>
 <body>
   <header class="app-header">
@@ -179,7 +189,6 @@
     </section>
   </main>
 
-  <!-- БОКОВАЯ ПАНЕЛЬ -->
   <aside id="sidePanel" class="sidepanel left">
     <div class="side-header">
       <h2>Меню</h2>
@@ -199,7 +208,6 @@
         <ol id="historyList" class="history"></ol>
       </section>
 
-      <!-- НАСТРОЙКИ -->
       <section id="settingsPanel" class="spanel">
         <div class="field">
           <label for="hardnessRange">Уровень «жесткости» (монеты): <span id="hardnessLabel">1.0×</span></label>
@@ -207,12 +215,9 @@
           <p class="hint">Множитель к бюджету и монетам (0.5×…3.0×). 1.0 — по умолчанию.</p>
         </div>
 
-        <!-- Источники предметов -->
         <div class="field">
           <label>Источники предметов</label>
-          <div id="sourcesBox" class="row wrap gap">
-            <!-- чекбоксы отрисует скрипт ниже -->
-          </div>
+          <div id="sourcesBox" class="row wrap gap"></div>
           <p class="hint">По умолчанию включён только <code>DMG14</code>. Отметь один или несколько источников.</p>
         </div>
 
@@ -229,10 +234,13 @@
     </div>
   </aside>
 
-  <!-- СКРИПТЫ -->
-  <script src="app.js?v=v2025-09-06-3" defer></script>
+  <footer class="app-footer">Версия: <span id="verLabel">—</span></footer>
 
-  <!-- Фильтр источников: UI + патч к filterCandidates (оставляем app.js нетронутым) -->
+  <!-- СКРИПТЫ -->
+  <script src="app.js" defer></script>
+  <script src="version.js" defer></script>
+
+  <!-- Источники: UI + патч к filterCandidates -->
   <script>
   (function(){
     const LS_KEY = 'lootgen_allowed_sources';
@@ -249,36 +257,28 @@
     ];
 
     function loadAllowed(){
-      try {
-        const raw = localStorage.getItem(LS_KEY);
-        const arr = raw ? JSON.parse(raw) : null;
-        if (Array.isArray(arr) && arr.length) return arr;
-      } catch {}
-      return ['DMG14']; // дефолт
+      try { const raw = localStorage.getItem(LS_KEY); const arr = raw ? JSON.parse(raw) : null; if (Array.isArray(arr) && arr.length) return arr; } catch {}
+      return ['DMG14'];
     }
-    function saveAllowed(list){
-      localStorage.setItem(LS_KEY, JSON.stringify(list));
-    }
+    function saveAllowed(list){ localStorage.setItem(LS_KEY, JSON.stringify(list)); }
 
     function renderSourcesUI(){
-      const box = document.getElementById('sourcesBox');
-      if (!box) return;
+      const box = document.getElementById('sourcesBox'); if (!box) return;
       const allowed = new Set(loadAllowed());
       box.innerHTML = '';
       SOURCE_OPTIONS.forEach(opt => {
         const id = 'src_' + opt.code;
         const label = document.createElement('label');
-        label.className = 'checkbox one-line';
-        label.style.minWidth = '220px';
-
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.value = opt.code;
         input.id = id;
         input.checked = allowed.has(opt.code);
-
+        input.style.appearance = 'auto';
+        input.style.webkitAppearance = 'checkbox';
+        input.style.mozAppearance = 'checkbox';
         const span = document.createElement('span');
-        span.innerHTML = `<strong>${opt.code}</strong> <span class="hint">— ${opt.title}</span>`;
+        span.innerHTML = `<strong>${opt.code}</strong> — ${opt.title}`;
 
         input.addEventListener('change', () => {
           const current = new Set(loadAllowed());
@@ -293,12 +293,8 @@
       });
     }
 
-    // мягкий патч: усиливаем filterCandidates дополнительной фильтрацией по source_code
     function patchFilter(){
-      if (typeof window.filterCandidates !== 'function') {
-        setTimeout(patchFilter, 50);
-        return;
-      }
+      if (typeof window.filterCandidates !== 'function') { setTimeout(patchFilter, 50); return; }
       const original = window.filterCandidates;
       window.filterCandidates = function(source, tierObj, rarityKey){
         const list = original.call(this, source, tierObj, rarityKey) || [];
@@ -307,32 +303,18 @@
       };
     }
 
+    function showVersion(){
+      const el = document.getElementById('verLabel');
+      const v = (window.APP_VERSION || window.appVersion || (window.VERSION && window.VERSION.tag) || '').toString();
+      if (el) el.textContent = v || 'dev';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderSourcesUI();
       patchFilter();
+      showVersion();
     });
   })();
-  </script>
-
-  <!-- Регистрация SW (как у тебя) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => {
-            // обновление без ручного reload
-            reg.addEventListener('updatefound', () => {
-              const nw = reg.installing;
-              nw?.addEventListener('statechange', () => {
-                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                  nw.postMessage({ type: 'SKIP_WAITING' });
-                }
-              });
-            });
-          })
-          .catch(console.error);
-      });
-    }
   </script>
 </body>
 </html>
