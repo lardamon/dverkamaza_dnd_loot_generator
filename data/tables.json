@@ -1,23 +1,121 @@
 {
+  "version": "4.0",
   "tiers": [
-    { "min_cr": 0,  "max_cr": 1,  "label": "0-1",  "budget_gp": 6,   "chance": { "ordinary": 1.00, "rare": 0.00, "very_rare": 0.00, "legendary": 0.00 } },
-    { "min_cr": 2,  "max_cr": 3,  "label": "2-3",  "budget_gp": 15,  "chance": { "ordinary": 0.95, "rare": 0.05, "very_rare": 0.00, "legendary": 0.00 } },
-    { "min_cr": 4,  "max_cr": 5,  "label": "4-5",  "budget_gp": 50,  "chance": { "ordinary": 0.85, "rare": 0.15, "very_rare": 0.00, "legendary": 0.00 } },
-    { "min_cr": 6,  "max_cr": 7,  "label": "6-7",  "budget_gp": 120, "chance": { "ordinary": 0.70, "rare": 0.25, "very_rare": 0.05, "legendary": 0.00 } },
-    { "min_cr": 8,  "max_cr": 10, "label": "8-10", "budget_gp": 240, "chance": { "ordinary": 0.60, "rare": 0.30, "very_rare": 0.10, "legendary": 0.00 } },
-    { "min_cr": 11, "max_cr": 13, "label": "11-13","budget_gp": 600, "chance": { "ordinary": 0.50, "rare": 0.30, "very_rare": 0.17, "legendary": 0.03 } },
-    { "min_cr": 14, "max_cr": 16, "label": "14-16","budget_gp": 1200,"chance": { "ordinary": 0.40, "rare": 0.35, "very_rare": 0.20, "legendary": 0.05 } },
-    { "min_cr": 17, "max_cr": 30, "label": "17+",  "budget_gp": 2500,"chance": { "ordinary": 0.35, "rare": 0.35, "very_rare": 0.22, "legendary": 0.08 } }
+    {
+      "label": "0-1",
+      "min_cr": 0,
+      "max_cr": 1,
+      "budget_gp": 50,
+      "chance": {
+        "ordinary": 0.9,
+        "rare": 0.1,
+        "very_rare": 0.0,
+        "legendary": 0.0
+      }
+    },
+    {
+      "label": "2-3",
+      "min_cr": 2,
+      "max_cr": 3,
+      "budget_gp": 100,
+      "chance": {
+        "ordinary": 0.8,
+        "rare": 0.2,
+        "very_rare": 0.0,
+        "legendary": 0.0
+      }
+    },
+    {
+      "label": "4-5",
+      "min_cr": 4,
+      "max_cr": 5,
+      "budget_gp": 200,
+      "chance": {
+        "ordinary": 0.7,
+        "rare": 0.28,
+        "very_rare": 0.02,
+        "legendary": 0.0
+      }
+    },
+    {
+      "label": "6-7",
+      "min_cr": 6,
+      "max_cr": 7,
+      "budget_gp": 400,
+      "chance": {
+        "ordinary": 0.6,
+        "rare": 0.34,
+        "very_rare": 0.06,
+        "legendary": 0.0
+      }
+    },
+    {
+      "label": "8-10",
+      "min_cr": 8,
+      "max_cr": 10,
+      "budget_gp": 800,
+      "chance": {
+        "ordinary": 0.5,
+        "rare": 0.38,
+        "very_rare": 0.12,
+        "legendary": 0.0
+      }
+    },
+    {
+      "label": "11-13",
+      "min_cr": 11,
+      "max_cr": 13,
+      "budget_gp": 1500,
+      "chance": {
+        "ordinary": 0.38,
+        "rare": 0.44,
+        "very_rare": 0.16,
+        "legendary": 0.02
+      }
+    },
+    {
+      "label": "14-16",
+      "min_cr": 14,
+      "max_cr": 16,
+      "budget_gp": 3000,
+      "chance": {
+        "ordinary": 0.30,
+        "rare": 0.45,
+        "very_rare": 0.22,
+        "legendary": 0.03
+      }
+    },
+    {
+      "label": "17+",
+      "min_cr": 17,
+      "max_cr": 30,
+      "budget_gp": 5000,
+      "chance": {
+        "ordinary": 0.22,
+        "rare": 0.46,
+        "very_rare": 0.27,
+        "legendary": 0.05
+      }
+    }
   ],
-  "containers": {
-    "small":  { "coin_multiplier": 0.5 },
-    "medium": { "coin_multiplier": 1 },
-    "large":  { "coin_multiplier": 2 }
-  },
   "hoard_bands": {
-    "0-4": 300,
+    "0-4": 150,
     "5-10": 1000,
-    "11-16": 6000,
-    "17+": 20000
+    "11-16": 3500,
+    "17+": 8000
+  },
+  "containers": {
+    "small": {
+      "title": "Маленький",
+      "coin_multiplier": 0.5
+    },
+    "medium": {
+      "title": "Средний",
+      "coin_multiplier": 1.0
+    },
+    "large": {
+      "title": "Большой",
+      "coin_multiplier": 1.5
+    }
   }
 }

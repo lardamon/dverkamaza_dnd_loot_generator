@@ -11,7 +11,7 @@
   <!-- если у тебя есть background.css — оставь строку ниже; если нет, можно удалить -->
   <link rel="stylesheet" href="background.css?v=v2025-09-06-3" />
 
-  <meta name="description" content="Офлайн PWA генератор лута D&D 5e на русском. Ванильный HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
+  <meta name="description" content="Офлайн PWA генератор лута D&D 5e на чистом клиентском стеке. Работает локально, умеет бюджет, d20, CR и контейнеры. Простой HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
 <body>
   <header class="app-header">
@@ -64,13 +64,14 @@
           <div class="field">
             <label for="containerSelect">Контейнер</label>
             <select id="containerSelect">
-              <option value="small">Малый</option>
+              <option value="small">Маленький</option>
               <option value="medium" selected>Средний</option>
-              <option value="large">Крупный</option>
+              <option value="large">Большой</option>
             </select>
           </div>
+
           <div class="field">
-            <label for="tierSelect">Tier</label>
+            <label for="tierSelect">Диапазон CR</label>
             <select id="tierSelect"></select>
           </div>
 
@@ -90,12 +91,7 @@
             <label for="musicCategory">Категория</label>
             <select id="musicCategory"></select>
           </div>
-          <div class="field grow">
-            <label>Плейлист</label>
-            <ul id="trackList" class="tracks scroll"></ul>
-          </div>
         </div>
-
         <div class="music-controls mt">
           <div class="row gap">
             <button id="prevBtn" class="btn icon" title="Предыдущий">⏮</button>
@@ -126,9 +122,9 @@
             <li><strong>Безоружный удар (атака):</strong> <code>1к20 + бонус мастерства + модификатор Силы</code></li>
             <li><strong>Урон безоружного удара:</strong> <code>1 + модификатор Силы</code></li>
             <li><strong>Рукопашная атака оружием:</strong> <code>1к20 + бонус мастерства + модификатор Силы</code> <span class="hint">(для фехтовального можно Ловкость)</span></li>
-            <li><strong>Урон рукопашной атаки оружием:</strong> <code>Кость оружия + модификатор Силы</code> <span class="hint">(фехтовальное — можно Ловкость)</span></li>
+            <li><strong>Урон рукопашной атаки оружием:</strong> <code>костей урона оружия + модификатор Силы</code> <span class="hint">(фехтовальное — можно Ловкость)</span></li>
             <li><strong>Дальнобойная атака оружием:</strong> <code>1к20 + бонус мастерства + модификатор Ловкости</code> <span class="hint">(метательное — тот же модификатор, что и в рукопашной)</span></li>
-            <li><strong>Урон дальнобойной атаки оружием:</strong> <code>Кость оружия + модификатор Ловкости</code> <span class="hint">(метательное — тот же модификатор, что и в рукопашной)</span></li>
+            <li><strong>Урон дальнобойной атаки оружием:</strong> <code>костей урона оружия + модификатор Ловкости</code> <span class="hint">(метательное — тот же модификатор, что и в рукопашной)</span></li>
             <li><strong>Атака заклинанием:</strong> <code>1к20 + бонус мастерства + модификатор базовой характеристики</code></li>
             <li><strong>Урон заклинания:</strong> <em>зависит от заклинания</em></li>
             <li><strong>Сложность спасброска от заклинания:</strong> <code>8 + модификатор базовой характеристики + бонус мастерства</code></li>
@@ -151,45 +147,39 @@
     <!-- РЕЗУЛЬТАТ -->
     <section id="resultCard" class="card">
       <h2>Результат</h2>
-      <div class="grid cols-2 mt">
+      <div class="grid cols-2 gap">
         <div>
           <h3>Монеты</h3>
-          <ul id="coinsList"></ul>
+          <ul id="coinsList" class="nice-list"></ul>
+
+          <h3>Мелкие камни</h3>
+          <ul id="smallGemsList" class="nice-list"></ul>
+
+          <h3>Редкие камни</h3>
+          <ul id="rareGemsList" class="nice-list"></ul>
         </div>
         <div>
           <h3>Предметы</h3>
-          <ul id="itemsList"></ul>
+          <ul id="itemsList" class="nice-list"></ul>
+
+          <h3>Итоговая ценность</h3>
+          <div class="total"><span id="totalValue">0</span> gp</div>
         </div>
-      </div>
-      <div class="grid cols-2 mt">
-        <div>
-          <h3>Мелкие драгоценности</h3>
-          <ul id="smallGemsList"></ul>
-        </div>
-        <div>
-          <h3>Редкие драгоценности</h3>
-          <ul id="rareGemsList"></ul>
-        </div>
-      </div>
-      <div class="mt">
-        <strong>Итоговая ценность (gp): </strong><span id="totalValue"></span>
       </div>
     </section>
 
-    <!-- Подсказка по установке PWA -->
-    <section id="installCard" class="card subtle" hidden>
-      <div class="row wrap gap">
-        <div><h2>Установить как приложение</h2></div>
-        <div class="spacer"></div>
-        <button id="installBtn" class="btn" hidden>Добавить на главный экран</button>
+    <!-- УСТАНОВКА PWA -->
+    <section id="installCard" class="card" hidden>
+      <h2>Установить как приложение</h2>
+      <p class="hint">Работает офлайн, доступ с рабочего стола, быстрый старт.</p>
+      <div id="installHint" hidden>
+        <p>На iOS: нажми <strong>Поделиться</strong> → <strong>На экран «Домой»</strong>.</p>
       </div>
-      <p id="installHint" class="hint" hidden>
-        На iPhone: откройте меню «Поделиться» → «На экран “Домой”».
-      </p>
+      <button id="installBtn" class="btn primary" hidden>Установить</button>
     </section>
   </main>
 
-  <!-- Боковое меню -->
+  <!-- БОКОВАЯ ПАНЕЛЬ -->
   <aside id="sidePanel" class="sidepanel left">
     <div class="side-header">
       <h2>Меню</h2>
@@ -208,16 +198,29 @@
         </div>
         <ol id="historyList" class="history"></ol>
       </section>
+
+      <!-- НАСТРОЙКИ -->
       <section id="settingsPanel" class="spanel">
         <div class="field">
           <label for="hardnessRange">Уровень «жесткости» (монеты): <span id="hardnessLabel">1.0×</span></label>
           <input id="hardnessRange" type="range" min="0.5" max="3.0" step="0.1" value="1.0" />
           <p class="hint">Множитель к бюджету и монетам (0.5×…3.0×). 1.0 — по умолчанию.</p>
         </div>
+
+        <!-- Источники предметов -->
+        <div class="field">
+          <label>Источники предметов</label>
+          <div id="sourcesBox" class="row wrap gap">
+            <!-- чекбоксы отрисует скрипт ниже -->
+          </div>
+          <p class="hint">По умолчанию включён только <code>DMG14</code>. Отметь один или несколько источников.</p>
+        </div>
+
         <div class="field">
           <label for="maxItemsInput">Максимум предметов</label>
           <input id="maxItemsInput" type="number" min="1" max="3" value="1" />
         </div>
+
         <div class="row wrap gap">
           <button id="saveSettingsBtn" class="btn primary">Сохранить</button>
           <button id="resetSettingsBtn" class="btn">Сбросить</button>
@@ -226,25 +229,98 @@
     </div>
   </aside>
 
-  <footer class="app-footer">
-    <small>© ДверьКамаза 2025 Локальный офлайн-генератор. Версия <span id="appVersion"></span></small>
-  </footer>
-
-  <script src="version.js"></script>
-  <script>document.getElementById('appVersion').textContent = APP_VERSION;</script>
-
-  <!-- База + прайсинг -->
-  <script src="items.js?v=v2025-09-06-3" defer></script>
-  <script src="pricing.js?v=v2025-09-06-3" defer></script>
-
+  <!-- СКРИПТЫ -->
   <script src="app.js?v=v2025-09-06-3" defer></script>
 
+  <!-- Фильтр источников: UI + патч к filterCandidates (оставляем app.js нетронутым) -->
+  <script>
+  (function(){
+    const LS_KEY = 'lootgen_allowed_sources';
+    const SOURCE_OPTIONS = [
+      { code:'DMG14', title:"Dungeon Master's Guide" },
+      { code:'AI',    title:'Acquisition Incorporated' },
+      { code:'BPGG',  title:'Bigby Presents: Glory of the Giants' },
+      { code:'BMT',   title:'The Book of Many Things' },
+      { code:'RLW',   title:'Eberron: Rising from the Last War' },
+      { code:'EGW',   title:"Explorer's Guide to Wildemount" },
+      { code:'GGR',   title:"Guildmasters' Guide to Ravnica" },
+      { code:'TCE',   title:"Tasha's Cauldron of Everything" },
+      { code:'XGE',   title:"Xanathar's Guide to Everything" }
+    ];
+
+    function loadAllowed(){
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        const arr = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(arr) && arr.length) return arr;
+      } catch {}
+      return ['DMG14']; // дефолт
+    }
+    function saveAllowed(list){
+      localStorage.setItem(LS_KEY, JSON.stringify(list));
+    }
+
+    function renderSourcesUI(){
+      const box = document.getElementById('sourcesBox');
+      if (!box) return;
+      const allowed = new Set(loadAllowed());
+      box.innerHTML = '';
+      SOURCE_OPTIONS.forEach(opt => {
+        const id = 'src_' + opt.code;
+        const label = document.createElement('label');
+        label.className = 'checkbox one-line';
+        label.style.minWidth = '220px';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = opt.code;
+        input.id = id;
+        input.checked = allowed.has(opt.code);
+
+        const span = document.createElement('span');
+        span.innerHTML = `<strong>${opt.code}</strong> <span class="hint">— ${opt.title}</span>`;
+
+        input.addEventListener('change', () => {
+          const current = new Set(loadAllowed());
+          if (input.checked) current.add(opt.code); else current.delete(opt.code);
+          if (current.size === 0) { current.add('DMG14'); document.getElementById('src_DMG14').checked = true; }
+          saveAllowed([...current]);
+        });
+
+        label.appendChild(input);
+        label.appendChild(span);
+        box.appendChild(label);
+      });
+    }
+
+    // мягкий патч: усиливаем filterCandidates дополнительной фильтрацией по source_code
+    function patchFilter(){
+      if (typeof window.filterCandidates !== 'function') {
+        setTimeout(patchFilter, 50);
+        return;
+      }
+      const original = window.filterCandidates;
+      window.filterCandidates = function(source, tierObj, rarityKey){
+        const list = original.call(this, source, tierObj, rarityKey) || [];
+        const allowedSet = new Set(loadAllowed());
+        return list.filter(it => allowedSet.has(it.source_code));
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSourcesUI();
+      patchFilter();
+    });
+  })();
+  </script>
+
+  <!-- Регистрация SW (как у тебя) -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('sw.js')
           .then(reg => {
-            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            // обновление без ручного reload
             reg.addEventListener('updatefound', () => {
               const nw = reg.installing;
               nw?.addEventListener('statechange', () => {
