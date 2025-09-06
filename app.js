@@ -13,10 +13,97 @@ const LS_KEYS = {
   TABLES: 'lootgen_tables_override',
   HISTORY: 'lootgen_history',
   SETTINGS: 'lootgen_settings',
-  MUSIC: 'lootgen_music_settings'
+  MUSIC: 'lootgen_music_settings',
+  SOURCES: 'lootgen_sources' // <— добавлен ключ для чекбоксов источников
 };
 
 const DEFAULT_SETTINGS = { hardness: 1.0, maxItems: 1 };
+
+// ====== Новое: список всех доступных источников и helpers ======
+const ALL_SOURCES = [
+  { code: 'DMG14', title: "Dungeon Master's Guide" },
+  { code: 'AI',    title: 'Acquisition Incorporated' },
+  { code: 'BPGG',  title: 'Bigby Presents: Glory of the Giants' },
+  { code: 'BMT',   title: 'The Book of Many Things' },
+  { code: 'RLW',   title: 'Eberron: Rising from the Last War' },
+  { code: 'EGW',   title: "Explorer's Guide to Wildemount" },
+  { code: 'GGR',   title: "Guildmasters' Guide to Ravnica" },
+  { code: 'TCE',   title: "Tasha's Cauldron of Everything" },
+  { code: 'XGE',   title: "Xanathar's Guide to Everything" },
+];
+
+// — читаем/пишем выбранные источники (по умолчанию только DMG14)
+function loadSelectedSources(){
+  try{
+    const raw = localStorage.getItem(LS_KEYS.SOURCES);
+    if(!raw) return ['DMG14'];
+    const arr = JSON.parse(raw);
+    return (Array.isArray(arr) && arr.length) ? arr : ['DMG14'];
+  }catch{ return ['DMG14']; }
+}
+function saveSelectedSources(arr){
+  localStorage.setItem(LS_KEYS.SOURCES, JSON.stringify(arr));
+}
+
+// — строим UI чекбоксов прямо в панели «Настройки» (index.html менять не надо)
+function buildSourcesUI(){
+  const settingsPanel = document.getElementById('settingsPanel');
+  if(!settingsPanel) return;
+
+  const field = document.createElement('div');
+  field.className = 'field';
+  field.innerHTML = `
+    <label>Источники предметов</label>
+    <div id="sourcesBox" class="sources-grid"></div>
+    <div class="row wrap gap" style="margin-top:.5rem">
+      <button id="srcSelectAll" class="btn">Выбрать все</button>
+      <button id="srcClear" class="btn">Очистить</button>
+    </div>
+    <p class="hint">По умолчанию включён только <code>DMG14</code>. Можно отметить несколько.</p>
+  `;
+  settingsPanel.appendChild(field);
+
+  // мини-стили, чтобы выглядело аккуратно
+  const st = document.createElement('style');
+  st.textContent = `
+    .sources-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:.25rem .75rem; }
+    .sources-grid code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .sources-grid label { display:flex; align-items:center; gap:.6rem; padding:.15rem 0; }
+    .sources-grid input[type=checkbox]{ appearance:auto; -webkit-appearance:checkbox; width:16px; height:16px; }
+  `;
+  document.head.appendChild(st);
+
+  const box = field.querySelector('#sourcesBox');
+  const selected = new Set(loadSelectedSources());
+  for(const s of ALL_SOURCES){
+    const lab = document.createElement('label');
+    lab.innerHTML = `
+      <input type="checkbox" value="${s.code}">
+      <code style="min-width:5.2rem;display:inline-block">${s.code}</code>
+      <span>— ${s.title}</span>
+    `;
+    const cb = lab.querySelector('input');
+    cb.checked = selected.has(s.code);
+    cb.addEventListener('change', ()=>{
+      const arr = Array.from(box.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
+      saveSelectedSources(arr);
+    });
+    box.appendChild(lab);
+  }
+  field.querySelector('#srcSelectAll').addEventListener('click', (e)=>{
+    e.preventDefault();
+    box.querySelectorAll('input[type=checkbox]').forEach(cb=> cb.checked = true);
+    const arr = Array.from(box.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value);
+    saveSelectedSources(arr);
+  });
+  field.querySelector('#srcClear').addEventListener('click', (e)=>{
+    e.preventDefault();
+    box.querySelectorAll('input[type=checkbox]').forEach(cb=> cb.checked = false);
+    saveSelectedSources([]); // пусто = ничего не падает (явное поведение)
+  });
+}
+
+// ================================================================
 
 const STATE = {
   data: { items: [], gems: null, tables: null, music: null },
@@ -159,24 +246,43 @@ function maybeRareGemsControlled(tierLbl, d20, cap){
 
 /* ---------- предметы ---------- */
 function rarityAllowedForTier(k, ch){ return (ch[k]??0)>0; }
+
+// ОБНОВЛЕННАЯ ВЕРСИЯ: фильтруем по выбранным источникам (чекбоксы)
 function filterCandidates(source, tierObj, rarityKey){
   const rarRu=RARITY_MAP[rarityKey], maxTier=tierObj.max_cr;
-  return STATE.data.items.filter(it=>{
+
+  // базовая фильтрация по редкости/CR
+  let list = STATE.data.items.filter(it=>{
     const tierOk= typeof it.tier==='number' ? it.tier<=maxTier : true;
-    const srcOk= Array.isArray(it.loot_source) ? it.loot_source.includes(source) : true;
-    const rarOk=(it.rarity||'').toLowerCase()===rarRu;
-    return tierOk && srcOk && rarOk;
+    const rarOk=(String(it.rarity||'').toLowerCase()===rarRu);
+    return tierOk && rarOk;
   });
+
+  // фильтр по выбранным источникам
+  try{
+    const selected = loadSelectedSources(); // ['DMG14', ...]
+    if(Array.isArray(selected)){
+      if(selected.length===0){
+        list = []; // ничего не выбрано — ничего не падает (явно)
+      }else{
+        const allow = new Set(selected.map(String));
+        list = list.filter(it => allow.has(String(it.source_code||'').trim()));
+      }
+    }
+  }catch(e){ console.warn('[sources] фильтр не применён:', e); }
+
+  return list;
 }
+
 function pickByD20(list, d20){ if(!list.length) return null; const idx=(clamp(d20,1,20)-1)%list.length; return list[idx]; }
 
 /* ---------- конверты ---------- */
 function getEnvelopeShares(source,d20){
   const t=(clamp(Number(d20)||1,1,20)-1)/19;
   const cfg= source==='mob'?ENVELOPES.mob:ENVELOPES.chest;
-  const coins=lerp(cfg.coins_1,cfg.coins_20,t);
-  const items=lerp(cfg.items_1,cfg.items_20,t);
-  const gems =Math.max(0,1-coins-items);
+  let coins=lerp(cfg.coins_1,cfg.coins_20,t);
+  let items=lerp(cfg.items_1,cfg.items_20,t);
+  let gems =Math.max(0,1-coins-items);
   return {coins,items,gems};
 }
 
@@ -200,7 +306,21 @@ function generateLoot({ source, cr=null, containerSize=null, selectedTierLabel=n
   let budget=Math.round(baseBudget*budgetMul*(settings.hardness??1.0));
   if(source==='mob' && isBoss) budget=Math.round(budget*2.0);
 
+  // envelopes
   const shares=getEnvelopeShares(source,D20);
+
+  // — усиливаем шанс предметов для ящиков
+  if(source==='chest'){
+    let delta = 0;
+    if(containerSize==='small') delta = 0.05 * -1;      // маленький — чуть меньше предметов
+    if(containerSize==='large') delta = 0.10;           // большой — больше предметов
+    let items = clamp(shares.items + delta, 0, 0.60);
+    let coins = shares.coins - delta; // компенсируем из монет
+    let gems  = Math.max(0, 1 - items - coins);
+    if(coins < 0){ gems = Math.max(0, gems + coins); coins = 0; } // если монеты ушли в минус — добираем из камней
+    shares.items = items; shares.coins = coins; shares.gems = gems;
+  }
+
   let coinsCap=Math.round(budget*shares.coins);
   let itemsCap=Math.round(budget*shares.items);
   let gemsCap =Math.round(budget*shares.gems);
@@ -260,7 +380,7 @@ function generateLoot({ source, cr=null, containerSize=null, selectedTierLabel=n
     envelopes:{shares,caps:{coins:coinsCap,items:itemsCap,gems:gemsCap},coin_floor:coinFloor,overflow_allowance:overflowAllowance},
     coins_gp:Number(coins.toFixed(2)),
     coins_breakdown:splitCoins(coins),
-    items:items.map(({id,name,type,rarity,value_gp,description})=>({id,name,type,rarity,value_gp,description})),
+    items:items.map(({id,name,type,rarity,value_gp,description,source_code,source_title,url})=>({id,name,type,rarity,value_gp,description,source_code,source_title,url})),
     smallGems, rareGems,
     totalValue_gp:Number((coins+itemsValue+smallVal+rareVal).toFixed(2))
   };
@@ -282,7 +402,9 @@ function renderResult(res){
   const itemsList=$('#itemsList'); itemsList.innerHTML='';
   res.items.forEach(it=>{
     const li=document.createElement('li');
-    li.innerHTML=`<strong>${it.name}</strong> — ${it.rarity}, ${it.type} <br><span class="hint">~${it.value_gp} gp</span><br><span class="hint">${it.description||''}</span>`;
+    const link = it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${it.name}</a>` : `<strong>${it.name}</strong>`;
+    const src = it.source_code ? ` <span class="hint">[${it.source_code}]</span>` : '';
+    li.innerHTML=`${link}${src} — ${it.rarity}, ${it.type} <br><span class="hint">~${it.value_gp||0} gp</span>`;
     itemsList.appendChild(li);
   });
   if(!res.items.length){ const li=document.createElement('li'); li.textContent='—'; itemsList.appendChild(li); }
@@ -373,7 +495,6 @@ function detectMobile(){
   STATE.isMobile = isMobile;
   document.body.classList.toggle('mobile', isMobile);
 
-  // заполнить селекты CR/d20 на мобайле
   if (isMobile){
     const crSel = $('#crSelect'); if (crSel){ crSel.innerHTML=''; for(let i=0;i<=30;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=String(i); crSel.appendChild(o);} crSel.value='1';}
     const d20Sel = $('#d20Select'); if (d20Sel){ d20Sel.innerHTML=''; for(let i=1;i<=20;i++){ const o=document.createElement('option'); o.value=String(i); o.textContent=String(i); d20Sel.appendChild(o);} }
@@ -426,21 +547,17 @@ function triggerInstall(){
 
 /* ---------- события ---------- */
 function bindEvents(){
-  // табы
   $$('.tab').forEach(btn=> btn.addEventListener('click', ()=>{
-    // переключение вкладок
     $$('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
     $$('.mode').forEach(m=>m.classList.remove('visible'));
     const targetId = btn.dataset.tab;
     document.getElementById(targetId).classList.add('visible');
 
-    // показывать/скрывать карточку "Результат": прячем на вкладке Музыка
     const isMusic = targetId === 'mode-music';
     const resultCard = $('#resultCard');
     if (resultCard) resultCard.hidden = isMusic;
   }));
 
-  // генерация лута
   $('#generateBtn').addEventListener('click', ()=>{
     const activeTab=$('.tab.active').dataset.tab;
 
@@ -472,7 +589,6 @@ function bindEvents(){
     addToHistory(STATE.lastResult); alert('Сохранено в историю.');
   });
 
-  // боковая панель
   $('#menuBtn').addEventListener('click', ()=> $('#sidePanel').classList.add('open'));
   $('#closeMenuBtn').addEventListener('click', ()=> $('#sidePanel').classList.remove('open'));
   $$('.stab').forEach(b=> b.addEventListener('click', ()=>{
@@ -480,19 +596,16 @@ function bindEvents(){
     $$('.spanel').forEach(x=>x.classList.remove('visible')); document.getElementById(b.dataset.panel).classList.add('visible');
   }));
 
-  // история
   $('#exportHistoryBtn').addEventListener('click', ()=>{
     const list=getHistory(); const ts=new Date().toISOString().replace(/[:.]/g,'-');
     downloadFile(`loot-history-${ts}.json`, prettyJson(list));
   });
   $('#clearHistoryBtn').addEventListener('click', ()=>{ if(confirm('Очистить историю?')){ setHistory([]); renderHistory(); } });
 
-  // настройки
   $('#hardnessRange').addEventListener('input', ()=> $('#hardnessLabel').textContent=`${Number($('#hardnessRange').value).toFixed(1)}×`);
   $('#saveSettingsBtn').addEventListener('click', saveSettings);
   $('#resetSettingsBtn').addEventListener('click', resetSettings);
 
-  // музыка
   $('#musicCategory')?.addEventListener('change', (e)=>{ STATE.music.currentCategory=e.target.value; saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:STATE.music.volume}); STATE.music.currentIndex=-1; renderTrackList(); updateNowPlaying(); });
   $('#playBtn')?.addEventListener('click', ()=>{ const audio=$('#audio'); if(!audio) return; if(audio.paused){ if(STATE.music.currentIndex===-1 && STATE.music.filtered.length){ STATE.music.currentIndex=0; } playCurrentTrack(); } else { audio.pause(); } });
   $('#nextBtn')?.addEventListener('click', musicNext);
@@ -501,7 +614,6 @@ function bindEvents(){
   $('#loopBtn')?.addEventListener('click', ()=>{ STATE.music.loop=!STATE.music.loop; setBtnActive('#loopBtn',STATE.music.loop); saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:STATE.music.volume}); });
   $('#volumeRange')?.addEventListener('input', (e)=>{ const v=clamp(Number(e.target.value)||0.8,0,1); $('#audio').volume=v; STATE.music.volume=v; saveToLS(LS_KEYS.MUSIC,{...loadFromLS(LS_KEYS.MUSIC,{}),category:STATE.music.currentCategory,shuffle:STATE.music.shuffle,loop:STATE.music.loop,volume:v}); });
 
-  // установка PWA
   $('#installBtn').addEventListener('click', triggerInstall);
 }
 
@@ -516,7 +628,9 @@ async function init(){
   initMusic();
   setupInstallHint();
 
-  // при старте на бою/окружении "Результат" виден
+  // — построить чекбоксы источников (новое)
+  buildSourcesUI();
+
   const resultCard = $('#resultCard');
   if (resultCard) resultCard.hidden = false;
 }
