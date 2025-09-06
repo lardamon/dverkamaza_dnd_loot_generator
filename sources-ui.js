@@ -1,5 +1,4 @@
-<script>
-// sources-ui.js — чекбоксы источников + доступ из app.js
+// sources-ui.js — чекбоксы источников + API для app.js
 
 (function () {
   const LS_KEY = 'lootgen_sources';
@@ -17,86 +16,88 @@
 
   function loadSelected() {
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return ['DMG14']; // по умолчанию только DMG
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) && arr.length ? arr : ['DMG14'];
-    } catch { return ['DMG14']; }
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (Array.isArray(raw) && raw.length) return raw;
+    } catch {}
+    // по умолчанию — только DMG14
+    return ['DMG14'];
   }
-  function saveSelected(arr) {
-    localStorage.setItem(LS_KEY, JSON.stringify(arr));
-    window.dispatchEvent(new CustomEvent('sources:changed', { detail: { selected: arr } }));
+  function saveSelected(list) {
+    localStorage.setItem(LS_KEY, JSON.stringify(list));
   }
 
   function buildUI() {
-    const hostPanel = document.getElementById('settingsPanel');
-    if (!hostPanel) return;
+    const panel = document.getElementById('settingsPanel');
+    if (!panel) return;
 
-    const field = document.createElement('div');
-    field.className = 'field';
-    field.innerHTML = `
+    const block = document.createElement('div');
+    block.className = 'field';
+    block.innerHTML = `
       <label>Источники предметов</label>
-      <div id="sourcesFieldset" class="sources-grid"></div>
-      <div class="row wrap gap" style="margin-top:.5rem">
-        <button id="srcSelectAll" class="btn">Выбрать все</button>
-        <button id="srcClear" class="btn">Очистить</button>
+      <div class="sources-grid" id="sourcesGrid"></div>
+      <p class="hint">По умолчанию включён только DMG14. Галочки сохраняются локально.</p>
+      <div class="row wrap gap">
+        <button type="button" id="srcAllBtn" class="btn">Выбрать все</button>
+        <button type="button" id="srcNoneBtn" class="btn">Снять все</button>
+        <button type="button" id="srcOnlyDmgBtn" class="btn">Только DMG14</button>
       </div>
-      <p class="hint">Галочками отметь книги/сборники, из которых разрешено падение лута. По умолчанию — только DMG14.</p>
     `;
-    hostPanel.appendChild(field);
+    // Вставляем ПЕРЕД кнопками настроек (чтобы было видно)
+    const settingsButtons = panel.querySelector('#saveSettingsBtn')?.closest('.row') || null;
+    if (settingsButtons) panel.insertBefore(block, settingsButtons);
+    else panel.appendChild(block);
 
-    const fs = field.querySelector('#sourcesFieldset');
+    const grid = block.querySelector('#sourcesGrid');
     const selected = new Set(loadSelected());
 
     for (const s of ALL_SOURCES) {
       const id = `src_${s.code}`;
-      const line = document.createElement('label');
-      line.className = 'src-line';
-      line.style.display = 'flex';
-      line.style.alignItems = 'center';
-      line.style.gap = '.6rem';
-      line.style.padding = '.2rem 0';
-
-      line.innerHTML = `
+      const wrap = document.createElement('label');
+      wrap.className = 'checkbox';
+      wrap.style.userSelect = 'none';
+      wrap.innerHTML = `
         <input type="checkbox" id="${id}" value="${s.code}">
-        <code style="min-width:5.2rem;display:inline-block">${s.code}</code>
-        <span>— ${s.title}</span>
+        <strong>${s.code}</strong> <span class="hint">${s.title}</span>
       `;
-      const cb = line.querySelector('input');
+      const cb = wrap.querySelector('input');
       cb.checked = selected.has(s.code);
       cb.addEventListener('change', () => {
-        const arr = Array.from(fs.querySelectorAll('input[type=checkbox]:checked')).map(x => x.value);
-        saveSelected(arr);
+        const now = new Set(loadSelected());
+        if (cb.checked) now.add(s.code); else now.delete(s.code);
+        const arr = Array.from(now);
+        // не допускаем пустого выбора: если сняли всё — вернём DMG14
+        saveSelected(arr.length ? arr : ['DMG14']);
       });
-      fs.appendChild(line);
+      grid.appendChild(wrap);
     }
 
-    field.querySelector('#srcSelectAll').addEventListener('click', (e) => {
-      e.preventDefault();
-      fs.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
-      const arr = Array.from(fs.querySelectorAll('input[type=checkbox]:checked')).map(x => x.value);
-      saveSelected(arr);
+    block.querySelector('#srcAllBtn').addEventListener('click', () => {
+      saveSelected(ALL_SOURCES.map(s => s.code));
+      grid.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
     });
-    field.querySelector('#srcClear').addEventListener('click', (e) => {
-      e.preventDefault();
-      fs.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
-      saveSelected([]); // пусто = разрешим всё? нет — пусть пусто означает «ничего»
+    block.querySelector('#srcNoneBtn').addEventListener('click', () => {
+      saveSelected(['DMG14']);
+      grid.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = cb.value === 'DMG14');
+    });
+    block.querySelector('#srcOnlyDmgBtn').addEventListener('click', () => {
+      saveSelected(['DMG14']);
+      grid.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = cb.value === 'DMG14');
     });
   }
 
-  // экспорт для app.js
-  window.getSelectedSources = function () {
-    return loadSelected(); // массив кодов
+  // API для app.js
+  window.getSelectedSources = function getSelectedSources() {
+    return loadSelected();
   };
 
-  // стили сетки — чтобы выглядело аккуратно без правки CSS
+  // немного стилей сетки (чтобы без правки твоего CSS)
   const style = document.createElement('style');
   style.textContent = `
     .sources-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:.25rem .75rem; }
-    .sources-grid code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .sources-grid .checkbox { display:flex; align-items:center; gap:.5rem; }
+    .sources-grid strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   `;
   document.head.appendChild(style);
 
   document.addEventListener('DOMContentLoaded', buildUI);
 })();
-</script>

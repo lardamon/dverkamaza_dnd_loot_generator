@@ -2,13 +2,15 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
-  <title>Генератор Лута D&D 5e — ДверьКамаза</title>
+  <title>Генератор Лута D&D 5e от ДверьКамаза</title>
 
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="background.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=v2025-09-06-3" />
+  <link rel="stylesheet" href="background.css?v=v2025-09-06-3" />
+
+  <meta name="description" content="Офлайн PWA генератор лута D&D 5e: лут с монстров, из окружения, учет CR и броска d20, бюджеты, редкости и камни. Чистый HTML/CSS/JS, JSON-таблицы, локальное хранилище и история." />
 </head>
 <body>
   <header class="app-header">
@@ -21,7 +23,8 @@
     <button id="menuBtn" class="btn">Меню</button>
   </header>
 
-  <main class="app-grid">
+  <!-- ВАЖНО: именно .container (есть в твоём styles.css), а не .app-grid -->
+  <main class="container">
     <section id="mode-battle" class="mode visible">
       <div class="card">
         <div class="card-header"><h2>Лут с монстра</h2></div>
@@ -128,7 +131,8 @@
     </section>
   </main>
 
-  <aside id="sidePanel" class="side">
+  <!-- ВАЖНО: именно .sidepanel (есть в твоём styles.css), а не .side -->
+  <aside id="sidePanel" class="sidepanel">
     <div class="side-header">
       <h3>Меню</h3>
       <button id="closeMenuBtn" class="btn icon" aria-label="Закрыть">✕</button>
@@ -147,7 +151,7 @@
         <ol id="historyList" class="history"></ol>
       </section>
 
-      <!-- В ЭТОТ ПАНЕЛЬ Я ДОБАВЛЯЮ ЧЕКБОКСЫ ИСТОЧНИКОВ через sources-ui.js -->
+      <!-- sources-ui.js сам добавит сюда блок чекбоксов -->
       <section id="settingsPanel" class="spanel">
         <div class="field">
           <label for="hardnessRange">Уровень «жесткости» (монеты): <span id="hardnessLabel">1.0×</span></label>
@@ -174,17 +178,19 @@
   <script src="version.js"></script>
   <script>document.getElementById('appVersion').textContent = APP_VERSION;</script>
 
-  <!-- База + прайсинг -->
+  <!-- данные -->
+  <script src="data/items.json" type="application/json"></script>
+  <script src="data/gems.json" type="application/json"></script>
+  <script src="data/tables.json" type="application/json"></script>
+  <script src="data/music.json" type="application/json"></script>
+
+  <!-- логика -->
   <script src="items.js?v=v2025-09-06-3" defer></script>
   <script src="pricing.js?v=v2025-09-06-3" defer></script>
-
-  <!-- ЧЕКБОКСЫ ИСТОЧНИКОВ: этот скрипт сам встроит UI в #settingsPanel -->
-  <script src="sources-ui.js" defer></script>
-
-  <!-- Приложение -->
+  <script src="sources-ui.js?v=v2025-09-06-4" defer></script>
   <script src="app.js?v=v2025-09-06-3" defer></script>
 
-  <!-- SW как было -->
+  <!-- SW -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -193,10 +199,9 @@
             if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
             reg.addEventListener('updatefound', () => {
               const nw = reg.installing;
-              if (!nw) return;
-              nw.addEventListener('statechange', () => {
+              nw?.addEventListener('statechange', () => {
                 if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                  try { reg.waiting?.postMessage({ type: 'SKIP_WAITING' }); } catch(e){}
+                  nw.postMessage({ type: 'SKIP_WAITING' });
                 }
               });
             });
