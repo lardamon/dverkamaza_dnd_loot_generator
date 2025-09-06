@@ -294,3 +294,13 @@ body.mobile .desktop-only{display:none}
 }
 .nice-list{ margin:0; padding-left:18px; }
 .nice-list li{ margin:.55em 0; line-height:1.55; }
+/* фикс: вернуть нормальные галочки для выбора источников */
+.sources-grid input[type=checkbox] {
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  appearance: checkbox !important;
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 6px 0 0 !important;
+}
